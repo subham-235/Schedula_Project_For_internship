@@ -12,6 +12,8 @@ export default function DoctorsPage() {
   const [location, setLocation] = useState("");
 
   useEffect(() => {
+
+    
     const params = new URLSearchParams(window.location.search);
     const specialtyFromUrl = params.get("specialty");
     const locationFromUrl = params.get("location");
