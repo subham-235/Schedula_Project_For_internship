@@ -9,8 +9,49 @@
   {
     "id": "doctor-001",
     "name": "Dr. Anika Rao",
-    "email": "doctor@schedula.com",
+    "email": "anika@schedula.com",
     "password": "password123",
-    "role": "doctor"
+    "role": "doctor",
+    "specialty": "General Medicine"
+  },
+  {
+    "id": "doctor-002",
+    "name": "Dr. Martin Cole",
+    "email": "martin@schedula.com",
+    "password": "password123",
+    "role": "doctor",
+    "specialty": "Dermatology"
+  },
+  {
+    "id": "doctor-003",
+    "name": "Dr. Rhea Sen",
+    "email": "rhea@schedula.com",
+    "password": "password123",
+    "role": "doctor",
+    "specialty": "Cardiology"
+  },
+  {
+    "id": "doctor-004",
+    "name": "Dr. Arjun Mehta",
+    "email": "arjun@schedula.com",
+    "password": "password123",
+    "role": "doctor",
+    "specialty": "Orthopedics"
+  },
+  {
+    "id": "doctor-005",
+    "name": "Dr. Nandini Basu",
+    "email": "nandini@schedula.com",
+    "password": "password123",
+    "role": "doctor",
+    "specialty": "Pediatrics"
+  },
+  {
+    "id": "doctor-006",
+    "name": "Dr. Kabir Kapoor",
+    "email": "kabir@schedula.com",
+    "password": "password123",
+    "role": "doctor",
+    "specialty": "Neurology"
   }
 ]

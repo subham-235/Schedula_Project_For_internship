@@ -1,4 +1,4 @@
-import usersJson from "./users.json";
-import type { MockUser } from "@/types/user";
+import usersData from "./users.json";
+import type { User } from "@/types/user";
 
-export const users = usersJson as MockUser[];
+export const users = usersData as User[];
