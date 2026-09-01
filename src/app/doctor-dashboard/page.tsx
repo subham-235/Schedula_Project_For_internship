@@ -13,9 +13,12 @@ import {
   useRouter,
 } from "next/navigation";
 
-import type {
-  Appointment,
-} from "@/types/appointment";
+import {
+  CalendarDays,
+  Clock3,
+  ListChecks,
+  UserRound,
+} from "lucide-react";
 
 import type {
   Booking,
@@ -27,7 +30,7 @@ import type {
 
 import {
   clearCurrentUser,
-  getBookings,
+  getBookingsForDoctor,
   getCurrentUser,
   getRegisteredDoctors,
   mergeDoctorProfiles,
@@ -38,11 +41,13 @@ import {
   doctors,
 } from "@/lib/mock-data/doctors";
 
+import {
+  formatAppointmentDate,
+  formatAppointmentTime,
+  isDashboardUpcoming,
+} from "@/lib/appointment-utils";
 
-type ApiResponse = {
-  data:
-    Appointment[];
-};
+import StatusBadge from "@/components/appointments/StatusBadge";
 
 
 function normalize(
@@ -51,103 +56,6 @@ function normalize(
   return value
     .trim()
     .toLowerCase();
-}
-
-
-function initials(
-  name: string
-) {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map(
-      (part) =>
-        part[0]
-          ?.toUpperCase()
-    )
-    .join("");
-}
-
-
-function formatDate(
-  value: string
-) {
-  return new Intl.DateTimeFormat(
-    "en-IN",
-    {
-      day:
-        "numeric",
-      month:
-        "short",
-      year:
-        "numeric",
-    }
-  ).format(
-    new Date(value)
-  );
-}
-
-
-function formatTime(
-  value: string
-) {
-  return new Intl.DateTimeFormat(
-    "en-IN",
-    {
-      hour:
-        "numeric",
-      minute:
-        "2-digit",
-    }
-  ).format(
-    new Date(value)
-  );
-}
-
-
-function bookingToAppointment(
-  booking: Booking
-): Appointment {
-  return {
-    id:
-      booking.id,
-
-    patient: {
-      name:
-        booking.patientName,
-
-      initials:
-        initials(
-          booking.patientName
-        ),
-
-      age:
-        booking.patientAge,
-    },
-
-    clinician:
-      booking.doctorName,
-
-    specialty:
-      booking.specialty,
-
-    startsAt:
-      booking.startsAt,
-
-    durationMinutes:
-      30,
-
-    status:
-      booking.status,
-
-    reason:
-      booking.reason,
-
-    room:
-      booking.doctorLocation ??
-      "Clinic booking",
-  };
 }
 
 
@@ -162,11 +70,6 @@ function findDoctorProfile(
     );
 
   return (
-    allDoctors.find(
-      (doctor) =>
-        doctor.userId ===
-        user.id
-    ) ??
     allDoctors.find(
       (doctor) =>
         doctor.id ===
@@ -206,14 +109,6 @@ export default function DoctorDashboardPage() {
     >(null);
 
   const [
-    appointments,
-    setAppointments,
-  ] =
-    useState<
-      Appointment[]
-    >([]);
-
-  const [
     bookings,
     setBookings,
   ] =
@@ -232,135 +127,19 @@ export default function DoctorDashboardPage() {
 
   const loadDashboard =
     useCallback(
-      async (
-        doctorUser:
-          StoredUser,
+      (
         doctorProfile:
           Doctor
       ) => {
-
         setLoading(
           true
         );
 
-        let apiAppointments:
-          Appointment[] =
-            [];
-
-        try {
-          const response =
-            await fetch(
-              "/api/appointments",
-              {
-                cache:
-                  "no-store",
-              }
-            );
-
-          if (
-            response.ok
-          ) {
-            const result =
-              await response.json() as ApiResponse;
-
-            apiAppointments =
-              result.data.filter(
-                (
-                  appointment
-                ) =>
-                  normalize(
-                    appointment.clinician
-                  ) ===
-                    normalize(
-                      doctorProfile.name
-                    ) ||
-                  normalize(
-                    appointment.clinician
-                  ) ===
-                    normalize(
-                      doctorUser.name
-                    )
-              );
-          }
-
-        } catch {
-          apiAppointments =
-            [];
-        }
-
-
-        const doctorBookings =
-          getBookings().filter(
-            (booking) =>
-              booking.doctorId ===
-                doctorProfile.id ||
-              normalize(
-                booking.doctorName
-              ) ===
-                normalize(
-                  doctorProfile.name
-                )
-          );
-
-
         setBookings(
-          doctorBookings
-        );
-
-
-        const localAppointments =
-          doctorBookings.map(
-            bookingToAppointment
-          );
-
-
-        const combined = [
-          ...localAppointments,
-          ...apiAppointments,
-        ];
-
-
-        const seen =
-          new Set<string>();
-
-
-        const unique =
-          combined
-            .filter(
-              (
-                appointment
-              ) => {
-                if (
-                  seen.has(
-                    appointment.id
-                  )
-                ) {
-                  return false;
-                }
-
-                seen.add(
-                  appointment.id
-                );
-
-                return true;
-              }
-            )
-            .sort(
-              (
-                a,
-                b
-              ) =>
-                new Date(
-                  a.startsAt
-                ).getTime() -
-                new Date(
-                  b.startsAt
-                ).getTime()
-            );
-
-
-        setAppointments(
-          unique
+          getBookingsForDoctor(
+            doctorProfile.id,
+            doctorProfile.name
+          )
         );
 
         setLoading(
@@ -420,7 +199,6 @@ export default function DoctorDashboardPage() {
     );
 
     loadDashboard(
-      currentUser,
       doctorProfile
     );
 
@@ -430,37 +208,87 @@ export default function DoctorDashboardPage() {
   ]);
 
 
+  useEffect(() => {
+    if (
+      !profile
+    ) {
+      return;
+    }
+
+    const handleFocus =
+      () => {
+        loadDashboard(
+          profile
+        );
+      };
+
+    window.addEventListener(
+      "focus",
+      handleFocus
+    );
+
+    return () =>
+      window.removeEventListener(
+        "focus",
+        handleFocus
+      );
+
+  }, [
+    profile,
+    loadDashboard,
+  ]);
+
+
   const upcoming =
     useMemo(
       () =>
-        appointments.filter(
-          (
-            appointment
-          ) =>
-            appointment.status !==
-              "cancelled" &&
-            new Date(
-              appointment.startsAt
-            ).getTime() >
-              Date.now()
-        ),
-      [appointments]
+        bookings
+          .filter(
+            isDashboardUpcoming
+          )
+          .sort(
+            (a, b) =>
+              new Date(
+                a.startsAt
+              ).getTime() -
+              new Date(
+                b.startsAt
+              ).getTime()
+          ),
+      [bookings]
     );
 
 
+  const pending =
+    upcoming.filter(
+      (booking) =>
+        booking.status ===
+        "pending"
+    ).length;
+
+
   const confirmed =
-    appointments.filter(
-      (item) =>
-        item.status ===
+    upcoming.filter(
+      (booking) =>
+        booking.status ===
         "confirmed"
     ).length;
 
 
-  const pending =
-    appointments.filter(
-      (item) =>
-        item.status ===
-        "pending"
+  const today =
+    new Date()
+      .toISOString()
+      .slice(
+        0,
+        10
+      );
+
+
+  const todayCount =
+    upcoming.filter(
+      (booking) =>
+        booking.date ===
+        today
     ).length;
 
 
@@ -489,7 +317,7 @@ export default function DoctorDashboardPage() {
 
 
   return (
-    <main className="min-h-screen px-4 py-6 sm:px-8 lg:px-12">
+    <main className="min-h-screen bg-[#f7faf8] px-4 py-6 sm:px-8 lg:px-12">
 
       <div className="mx-auto max-w-7xl">
 
@@ -499,7 +327,6 @@ export default function DoctorDashboardPage() {
             href="/"
             className="flex items-center gap-3"
           >
-
             <div className="grid size-11 place-items-center rounded-xl bg-[var(--brand)] text-xl font-semibold text-white">
               S
             </div>
@@ -513,14 +340,12 @@ export default function DoctorDashboardPage() {
                 Doctor Portal
               </p>
             </div>
-
           </Link>
 
 
           <div className="flex items-center gap-3">
 
             <div className="hidden text-right sm:block">
-
               <p className="text-sm font-semibold">
                 {
                   profile.name
@@ -532,7 +357,6 @@ export default function DoctorDashboardPage() {
                   profile.specialty
                 }
               </p>
-
             </div>
 
             <div className="grid size-10 place-items-center rounded-full bg-emerald-100 text-sm font-semibold text-[var(--brand)]">
@@ -546,7 +370,7 @@ export default function DoctorDashboardPage() {
               onClick={
                 logout
               }
-              className="rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600"
+              className="rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50"
             >
               Logout
             </button>
@@ -570,8 +394,7 @@ export default function DoctorDashboardPage() {
           </h1>
 
           <p className="mt-2 text-[var(--muted)]">
-            Here&apos;s an overview of your
-            appointments and practice.
+            Your dashboard only shows upcoming patient appointments.
           </p>
 
         </section>
@@ -592,20 +415,7 @@ export default function DoctorDashboardPage() {
           </div>
 
 
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-5">
-            <p className="text-sm text-emerald-700">
-              Confirmed
-            </p>
-
-            <p className="mt-2 text-3xl font-semibold text-emerald-900">
-              {
-                confirmed
-              }
-            </p>
-          </div>
-
-
-          <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-5">
+          <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-5">
             <p className="text-sm text-amber-700">
               Pending
             </p>
@@ -618,14 +428,27 @@ export default function DoctorDashboardPage() {
           </div>
 
 
-          <div className="rounded-2xl border border-[var(--line)] bg-white p-5">
-            <p className="text-sm text-[var(--muted)]">
-              Total appointments
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5">
+            <p className="text-sm text-emerald-700">
+              Confirmed
             </p>
 
-            <p className="mt-2 text-3xl font-semibold">
+            <p className="mt-2 text-3xl font-semibold text-emerald-900">
               {
-                appointments.length
+                confirmed
+              }
+            </p>
+          </div>
+
+
+          <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-5">
+            <p className="text-sm text-blue-700">
+              Today
+            </p>
+
+            <p className="mt-2 text-3xl font-semibold text-blue-900">
+              {
+                todayCount
               }
             </p>
           </div>
@@ -645,7 +468,7 @@ export default function DoctorDashboardPage() {
                 </h2>
 
                 <p className="mt-1 text-xs text-[var(--muted)]">
-                  Your next scheduled patient visits
+                  Pending and confirmed future visits only
                 </p>
               </div>
 
@@ -673,104 +496,158 @@ export default function DoctorDashboardPage() {
                 {upcoming
                   .slice(
                     0,
-                    5
+                    6
                   )
                   .map(
                     (
-                      appointment
-                    ) => {
+                      booking
+                    ) => (
 
-                      const booking =
-                        bookings.find(
-                          (
-                            item
-                          ) =>
-                            item.id ===
-                            appointment.id
-                        );
+                      <div
+                        key={
+                          booking.id
+                        }
+                        className="p-5"
+                      >
 
-                      return (
-                        <div
-                          key={
-                            appointment.id
-                          }
-                          className="grid gap-4 p-5 sm:grid-cols-[8rem_1fr_auto]"
-                        >
+                        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
 
-                          <div>
+                          <div className="flex gap-4">
 
-                            <p className="text-xs text-[var(--muted)]">
-                              {
-                                formatDate(
-                                  appointment.startsAt
-                                )
-                              }
-                            </p>
+                            <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-emerald-50 text-[var(--brand)]">
+                              <UserRound
+                                size={
+                                  20
+                                }
+                              />
+                            </div>
 
-                            <p className="mt-1 text-sm font-semibold">
-                              {
-                                formatTime(
-                                  appointment.startsAt
-                                )
-                              }
-                            </p>
+                            <div>
 
-                          </div>
+                              <div className="flex flex-wrap items-center gap-2">
+
+                                <p className="font-semibold">
+                                  {
+                                    booking.patientName
+                                  }
+                                </p>
+
+                                <StatusBadge
+                                  status={
+                                    booking.status
+                                  }
+                                />
+
+                              </div>
 
 
-                          <div>
+                              <div className="mt-2 flex flex-wrap gap-x-5 gap-y-2 text-xs text-[var(--muted)]">
 
-                            <p className="font-semibold">
-                              {
-                                appointment.patient.name
-                              }
-                            </p>
+                                <span className="inline-flex items-center gap-1.5">
+                                  <CalendarDays
+                                    size={
+                                      14
+                                    }
+                                  />
 
-                            <p className="mt-1 text-sm text-[var(--muted)]">
-                              {
-                                appointment.reason
-                              }
-                            </p>
+                                  {
+                                    formatAppointmentDate(
+                                      booking.startsAt
+                                    )
+                                  }
+                                </span>
 
-                            {booking?.attachment && (
+                                <span className="inline-flex items-center gap-1.5">
+                                  <Clock3
+                                    size={
+                                      14
+                                    }
+                                  />
+
+                                  {
+                                    formatAppointmentTime(
+                                      booking.startsAt
+                                    )
+                                  }
+                                </span>
+
+                              </div>
+
                               <p className="mt-2 text-xs font-semibold text-[var(--brand)]">
-                                📎 Medical document attached
+                                {
+                                  booking.appointmentType ??
+                                  "In-person"
+                                }
                               </p>
-                            )}
+
+                            </div>
 
                           </div>
 
 
-                          <span
-                            className={`h-fit rounded-full px-3 py-1 text-xs font-semibold capitalize ${
-                              appointment.status ===
-                              "confirmed"
-                                ? "bg-emerald-50 text-emerald-700"
-                                : "bg-amber-50 text-amber-700"
-                            }`}
-                          >
-                            {
-                              appointment.status
-                            }
-                          </span>
+                          <div className="flex flex-wrap gap-2">
+
+                            <Link
+                              href="/doctor-dashboard/appointments"
+                              className="inline-flex items-center gap-2 rounded-xl border border-[var(--line)] px-3 py-2 text-xs font-semibold hover:border-[var(--brand)] hover:text-[var(--brand)]"
+                            >
+                              <UserRound
+                                size={
+                                  14
+                                }
+                              />
+
+                              Patient details
+                            </Link>
+
+
+                            <Link
+                              href="/doctor-dashboard/calendar"
+                              className="inline-flex items-center gap-2 rounded-xl border border-[var(--line)] px-3 py-2 text-xs font-semibold hover:border-[var(--brand)] hover:text-[var(--brand)]"
+                            >
+                              <CalendarDays
+                                size={
+                                  14
+                                }
+                              />
+
+                              Calendar
+                            </Link>
+
+
+                            <Link
+                              href="/doctor-dashboard/appointments"
+                              className="rounded-xl bg-[var(--brand)] px-3 py-2 text-xs font-semibold text-white"
+                            >
+                              View details
+                            </Link>
+
+                          </div>
 
                         </div>
-                      );
-                    }
+
+                      </div>
+
+                    )
                   )}
 
               </div>
 
             ) : (
 
-              <div className="p-10 text-center">
+              <div className="p-12 text-center">
 
-                <p className="font-semibold">
+                <CalendarDays
+                  size={28}
+                  className="mx-auto text-stone-300"
+                />
+
+                <p className="mt-4 font-semibold">
                   No upcoming appointments
                 </p>
 
                 <p className="mt-2 text-sm text-[var(--muted)]">
-                  New patient bookings will appear here.
+                  New patient booking requests will appear here.
                 </p>
 
               </div>
@@ -786,18 +663,45 @@ export default function DoctorDashboardPage() {
               Quick Actions
             </h2>
 
+
             <div className="mt-4 space-y-3">
 
               <Link
                 href="/doctor-dashboard/profile"
                 className="block rounded-xl border border-[var(--line)] p-4 transition hover:border-[var(--brand)] hover:bg-emerald-50/40"
               >
-                <p className="font-semibold">
-                  👤 My Profile
+                <p className="flex items-center gap-2 font-semibold">
+                  <UserRound
+                    size={
+                      17
+                    }
+                  />
+
+                  My Profile
                 </p>
 
                 <p className="mt-1 text-xs text-[var(--muted)]">
-                  Update details and manage availability
+                  Update profile and availability
+                </p>
+              </Link>
+
+
+              <Link
+                href="/doctor-dashboard/calendar"
+                className="block rounded-xl border border-[var(--line)] p-4 transition hover:border-[var(--brand)] hover:bg-emerald-50/40"
+              >
+                <p className="flex items-center gap-2 font-semibold">
+                  <CalendarDays
+                    size={
+                      17
+                    }
+                  />
+
+                  Calendar
+                </p>
+
+                <p className="mt-1 text-xs text-[var(--muted)]">
+                  Day, week and month schedule
                 </p>
               </Link>
 
@@ -806,12 +710,18 @@ export default function DoctorDashboardPage() {
                 href="/doctor-dashboard/appointments"
                 className="block rounded-xl border border-[var(--line)] p-4 transition hover:border-[var(--brand)] hover:bg-emerald-50/40"
               >
-                <p className="font-semibold">
-                  📅 View All Appointments
+                <p className="flex items-center gap-2 font-semibold">
+                  <ListChecks
+                    size={
+                      17
+                    }
+                  />
+
+                  All Appointments
                 </p>
 
                 <p className="mt-1 text-xs text-[var(--muted)]">
-                  Review patient bookings and status
+                  Manage appointment status and details
                 </p>
               </Link>
 

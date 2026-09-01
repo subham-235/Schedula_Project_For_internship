@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import {
+  useCallback,
   useEffect,
   useMemo,
   useState,
@@ -13,24 +14,42 @@ import {
 } from "next/navigation";
 
 import type {
-  Appointment,
-  AppointmentStatus,
-} from "@/types/appointment";
-
-import type {
   Booking,
+  BookingStatus,
 } from "@/types/booking";
 
 import type {
   Doctor,
 } from "@/types/doctor";
 
+import type {
+  DoctorSlot,
+} from "@/types/availability";
+
+import type {
+  Prescription,
+} from "@/types/prescription";
+
 import {
-  getBookings,
+  cancelBooking,
+  confirmBooking,
+  declineBooking,
+  getAvailableSlotsForDoctor,
+  getBookingsForDoctor,
   getCurrentUser,
+  getPrescriptionByBookingId,
   getRegisteredDoctors,
+  markBookingCompleted,
+  markBookingMissed,
   mergeDoctorProfiles,
+  rescheduleBooking,
+  savePrescription,
 } from "@/lib/client-storage";
+
+import {
+  downloadMedicalFile,
+  viewMedicalFile,
+} from "@/lib/file-storage";
 
 import {
   doctors,
@@ -39,13 +58,28 @@ import {
 
 type Filter =
   | "all"
-  | AppointmentStatus;
+  | "pending"
+  | "confirmed"
+  | "upcoming"
+  | "completed"
+  | "cancelled"
+  | "missed";
 
-type ApiResponse = {
-  data:
-    Appointment[];
-};
 
+const filters: Filter[] = [
+  "all",
+  "pending",
+  "confirmed",
+  "upcoming",
+  "completed",
+  "cancelled",
+  "missed",
+];
+
+
+/* =========================================
+   HELPERS
+========================================= */
 
 function normalize(
   value: string
@@ -56,71 +90,117 @@ function normalize(
 }
 
 
-function initials(
+function formatDate(
   value: string
 ) {
-  return value
+  return new Intl.DateTimeFormat(
+    "en-IN",
+    {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }
+  ).format(
+    new Date(value)
+  );
+}
+
+
+function formatTime(
+  value: string
+) {
+  return new Intl.DateTimeFormat(
+    "en-IN",
+    {
+      hour: "numeric",
+      minute: "2-digit",
+    }
+  ).format(
+    new Date(value)
+  );
+}
+
+
+function formatFileSize(
+  bytes: number
+) {
+  if (
+    bytes < 1024
+  ) {
+    return `${bytes} B`;
+  }
+
+  if (
+    bytes <
+    1024 * 1024
+  ) {
+    return `${(
+      bytes /
+      1024
+    ).toFixed(
+      1
+    )} KB`;
+  }
+
+  return `${(
+    bytes /
+    1024 /
+    1024
+  ).toFixed(
+    1
+  )} MB`;
+}
+
+
+function getInitials(
+  name: string
+) {
+  return name
     .split(" ")
     .filter(Boolean)
-    .slice(
-      0,
-      2
-    )
+    .slice(0, 2)
     .map(
-      (item) =>
-        item[0]
+      (part) =>
+        part[0]
           ?.toUpperCase()
     )
     .join("");
 }
 
 
-function bookingToAppointment(
-  booking: Booking
-): Appointment {
-  return {
-    id:
-      booking.id,
+function getStatusClasses(
+  status: BookingStatus
+) {
+  switch (
+    status
+  ) {
+    case "pending":
+      return "border-amber-200 bg-amber-50 text-amber-700";
 
-    patient: {
-      name:
-        booking.patientName,
+    case "confirmed":
+      return "border-emerald-200 bg-emerald-50 text-emerald-700";
 
-      initials:
-        initials(
-          booking.patientName
-        ),
+    case "completed":
+      return "border-blue-200 bg-blue-50 text-blue-700";
 
-      age:
-        booking.patientAge,
-    },
+    case "cancelled":
+      return "border-red-200 bg-red-50 text-red-600";
 
-    clinician:
-      booking.doctorName,
+    case "missed":
+      return "border-stone-200 bg-stone-100 text-stone-600";
 
-    specialty:
-      booking.specialty,
-
-    startsAt:
-      booking.startsAt,
-
-    durationMinutes:
-      30,
-
-    status:
-      booking.status,
-
-    reason:
-      booking.reason,
-
-    room:
-      booking.doctorLocation ??
-      "Clinic booking",
-  };
+    default:
+      return "border-stone-200 bg-stone-100 text-stone-600";
+  }
 }
 
 
-function dataUrlToBlob(
+/* =========================================
+   OLD BASE64 FILE SUPPORT
+========================================= */
+
+function legacyDataUrlToBlob(
   dataUrl: string
 ) {
   const [
@@ -129,32 +209,38 @@ function dataUrlToBlob(
   ] =
     dataUrl.split(",");
 
+
   const mime =
     header.match(
       /data:(.*?);base64/
     )?.[1] ??
     "application/octet-stream";
 
+
   const binary =
     atob(
       encoded
     );
+
 
   const bytes =
     new Uint8Array(
       binary.length
     );
 
+
   for (
-    let i = 0;
-    i < binary.length;
-    i++
+    let index = 0;
+    index <
+    binary.length;
+    index++
   ) {
-    bytes[i] =
+    bytes[index] =
       binary.charCodeAt(
-        i
+        index
       );
   }
+
 
   return new Blob(
     [
@@ -168,17 +254,31 @@ function dataUrlToBlob(
 }
 
 
+/* =========================================
+   PAGE
+========================================= */
+
 export default function AllAppointmentsPage() {
   const router =
     useRouter();
 
+
+  /* =========================================
+     DOCTOR
+  ========================================= */
+
   const [
-    appointments,
-    setAppointments,
+    profile,
+    setProfile,
   ] =
     useState<
-      Appointment[]
-    >([]);
+      Doctor | null
+    >(null);
+
+
+  /* =========================================
+     BOOKINGS
+  ========================================= */
 
   const [
     bookings,
@@ -188,6 +288,18 @@ export default function AllAppointmentsPage() {
       Booking[]
     >([]);
 
+
+  const [
+    selectedId,
+    setSelectedId,
+  ] =
+    useState("");
+
+
+  /* =========================================
+     FILTERS
+  ========================================= */
+
   const [
     filter,
     setFilter,
@@ -196,11 +308,24 @@ export default function AllAppointmentsPage() {
       "all"
     );
 
+
   const [
     query,
     setQuery,
   ] =
     useState("");
+
+
+  const [
+    dateFilter,
+    setDateFilter,
+  ] =
+    useState("");
+
+
+  /* =========================================
+     PAGE STATE
+  ========================================= */
 
   const [
     loading,
@@ -211,344 +336,1253 @@ export default function AllAppointmentsPage() {
     );
 
 
-  useEffect(() => {
-
-    const load =
-      async () => {
-
-        const user =
-          getCurrentUser();
-
-        if (
-          !user ||
-          user.role !==
-            "doctor"
-        ) {
-          router.replace(
-            "/login"
-          );
-
-          return;
-        }
+  const [
+    message,
+    setMessage,
+  ] =
+    useState("");
 
 
-        const profiles =
-          mergeDoctorProfiles(
-            doctors,
-            getRegisteredDoctors()
-          );
+  const [
+    error,
+    setError,
+  ] =
+    useState("");
 
 
-        const profile:
-          Doctor | undefined =
-            profiles.find(
-              (
-                item
-              ) =>
-                item.userId ===
-                user.id
-            ) ??
-            profiles.find(
-              (
-                item
-              ) =>
-                item.id ===
-                user.id
-            ) ??
-            profiles.find(
-              (
-                item
-              ) =>
-                normalize(
-                  item.name
-                ) ===
-                normalize(
-                  user.name
-                )
-            );
+  /* =========================================
+     RESCHEDULING
+  ========================================= */
+
+  const [
+    rescheduling,
+    setRescheduling,
+  ] =
+    useState(
+      false
+    );
 
 
-        if (
-          !profile
-        ) {
-          return;
-        }
+  const [
+    availableSlots,
+    setAvailableSlots,
+  ] =
+    useState<
+      DoctorSlot[]
+    >([]);
 
 
-        const storedBookings =
-          getBookings().filter(
-            (
-              booking
-            ) =>
-              booking.doctorId ===
-                profile.id ||
-              normalize(
-                booking.doctorName
-              ) ===
-                normalize(
-                  profile.name
-                )
+  const [
+    selectedRescheduleDate,
+    setSelectedRescheduleDate,
+  ] =
+    useState("");
+
+
+  /* =========================================
+     PRESCRIPTION
+  ========================================= */
+
+  const [
+    prescription,
+    setPrescription,
+  ] =
+    useState<
+      Prescription | null
+    >(null);
+
+
+  const [
+    prescriptionFormOpen,
+    setPrescriptionFormOpen,
+  ] =
+    useState(
+      false
+    );
+
+
+  const [
+    diagnosis,
+    setDiagnosis,
+  ] =
+    useState("");
+
+
+  const [
+    medications,
+    setMedications,
+  ] =
+    useState("");
+
+
+  const [
+    prescriptionNotes,
+    setPrescriptionNotes,
+  ] =
+    useState("");
+
+
+  const [
+    savingPrescription,
+    setSavingPrescription,
+  ] =
+    useState(
+      false
+    );
+
+
+  /* =========================================
+     LOAD BOOKINGS
+  ========================================= */
+
+  const loadBookings =
+    useCallback(
+      (
+        doctor: Doctor
+      ) => {
+        const items =
+          getBookingsForDoctor(
+            doctor.id,
+            doctor.name
           );
 
 
         setBookings(
-          storedBookings
+          items
         );
 
 
-        let apiAppointments:
-          Appointment[] =
-            [];
+        setSelectedId(
+          (
+            current
+          ) => {
+            if (
+              current &&
+              items.some(
+                (item) =>
+                  item.id ===
+                  current
+              )
+            ) {
+              return current;
+            }
 
 
-        try {
-          const response =
-            await fetch(
-              "/api/appointments",
-              {
-                cache:
-                  "no-store",
-              }
+            return (
+              items[0]?.id ??
+              ""
             );
-
-          if (
-            response.ok
-          ) {
-            const result =
-              await response.json() as ApiResponse;
-
-            apiAppointments =
-              result.data.filter(
-                (
-                  appointment
-                ) =>
-                  normalize(
-                    appointment.clinician
-                  ) ===
-                    normalize(
-                      profile.name
-                    ) ||
-                  normalize(
-                    appointment.clinician
-                  ) ===
-                    normalize(
-                      user.name
-                    )
-              );
           }
-
-        } catch {
-          apiAppointments =
-            [];
-        }
-
-
-        const merged = [
-          ...storedBookings.map(
-            bookingToAppointment
-          ),
-          ...apiAppointments,
-        ];
-
-
-        const seen =
-          new Set<string>();
-
-
-        setAppointments(
-          merged
-            .filter(
-              (
-                item
-              ) => {
-                if (
-                  seen.has(
-                    item.id
-                  )
-                ) {
-                  return false;
-                }
-
-                seen.add(
-                  item.id
-                );
-
-                return true;
-              }
-            )
-            .sort(
-              (
-                a,
-                b
-              ) =>
-                new Date(
-                  b.startsAt
-                ).getTime() -
-                new Date(
-                  a.startsAt
-                ).getTime()
-            )
         );
+      },
+      []
+    );
 
 
-        setLoading(
-          false
+  /* =========================================
+     AUTH + DOCTOR
+  ========================================= */
+
+  useEffect(() => {
+    const user =
+      getCurrentUser();
+
+
+    if (
+      !user ||
+      user.role !==
+        "doctor"
+    ) {
+      router.replace(
+        "/login"
+      );
+
+      return;
+    }
+
+
+    const allDoctors =
+      mergeDoctorProfiles(
+        doctors,
+        getRegisteredDoctors()
+      );
+
+
+    const found =
+      allDoctors.find(
+        (doctor) =>
+          doctor.userId ===
+          user.id
+      ) ??
+      allDoctors.find(
+        (doctor) =>
+          doctor.id ===
+          user.id
+      ) ??
+      allDoctors.find(
+        (doctor) =>
+          normalize(
+            doctor.name
+          ) ===
+          normalize(
+            user.name
+          )
+      );
+
+
+    if (
+      !found
+    ) {
+      router.replace(
+        "/doctor-dashboard"
+      );
+
+      return;
+    }
+
+
+    setProfile(
+      found
+    );
+
+
+    loadBookings(
+      found
+    );
+
+
+    setLoading(
+      false
+    );
+
+  }, [
+    router,
+    loadBookings,
+  ]);
+
+
+  /* =========================================
+     REFRESH WHEN TAB RETURNS
+  ========================================= */
+
+  useEffect(() => {
+    if (
+      !profile
+    ) {
+      return;
+    }
+
+
+    const handleFocus =
+      () => {
+        loadBookings(
+          profile
         );
       };
 
 
-    load();
+    window.addEventListener(
+      "focus",
+      handleFocus
+    );
+
+
+    return () => {
+      window.removeEventListener(
+        "focus",
+        handleFocus
+      );
+    };
 
   }, [
-    router,
+    profile,
+    loadBookings,
   ]);
 
+
+  /* =========================================
+     FILTER
+  ========================================= */
 
   const visible =
     useMemo(
       () =>
-        appointments.filter(
+        bookings.filter(
           (
-            appointment
+            booking
           ) => {
+            const now =
+              Date.now();
 
-            const matchesStatus =
+
+            const appointmentTime =
+              new Date(
+                booking.startsAt
+              ).getTime();
+
+
+            let matchesStatus =
+              true;
+
+
+            if (
               filter ===
-                "all" ||
-              appointment.status ===
+              "upcoming"
+            ) {
+              matchesStatus =
+                appointmentTime >
+                  now &&
+                (
+                  booking.status ===
+                    "pending" ||
+                  booking.status ===
+                    "confirmed"
+                );
+
+            } else if (
+              filter !==
+              "all"
+            ) {
+              matchesStatus =
+                booking.status ===
                 filter;
+            }
 
 
-            const normalized =
+            const search =
               query
                 .trim()
                 .toLowerCase();
 
 
             const matchesSearch =
-              !normalized ||
-              appointment.patient.name
+              !search ||
+              booking.patientName
                 .toLowerCase()
                 .includes(
-                  normalized
+                  search
                 ) ||
-              appointment.reason
+              booking.patientEmail
                 .toLowerCase()
                 .includes(
-                  normalized
+                  search
+                ) ||
+              booking.reason
+                .toLowerCase()
+                .includes(
+                  search
                 );
+
+
+            const matchesDate =
+              !dateFilter ||
+              booking.date ===
+                dateFilter;
 
 
             return (
               matchesStatus &&
-              matchesSearch
+              matchesSearch &&
+              matchesDate
             );
           }
         ),
       [
-        appointments,
+        bookings,
         filter,
         query,
+        dateFilter,
       ]
     );
 
 
-  const openAttachment =
-    (
-      booking:
-        Booking
-    ) => {
+  /* =========================================
+     KEEP VALID SELECTED APPOINTMENT
+  ========================================= */
 
+  useEffect(() => {
+    if (
+      visible.length ===
+      0
+    ) {
+      setSelectedId(
+        ""
+      );
+
+      return;
+    }
+
+
+    const exists =
+      visible.some(
+        (booking) =>
+          booking.id ===
+          selectedId
+      );
+
+
+    if (
+      !exists
+    ) {
+      setSelectedId(
+        visible[0].id
+      );
+    }
+
+  }, [
+    visible,
+    selectedId,
+  ]);
+
+
+  /* =========================================
+     SELECTED
+  ========================================= */
+
+  const selected =
+    bookings.find(
+      (booking) =>
+        booking.id ===
+        selectedId
+    ) ??
+    null;
+
+
+  /* =========================================
+     LOAD PRESCRIPTION FOR SELECTED
+  ========================================= */
+
+  useEffect(() => {
+    if (
+      !selected
+    ) {
+      setPrescription(
+        null
+      );
+
+      setDiagnosis("");
+
+      setMedications("");
+
+      setPrescriptionNotes("");
+
+      setPrescriptionFormOpen(
+        false
+      );
+
+      return;
+    }
+
+
+    const existing =
+      getPrescriptionByBookingId(
+        selected.id
+      );
+
+
+    setPrescription(
+      existing
+    );
+
+
+    if (
+      existing
+    ) {
+      setDiagnosis(
+        existing.diagnosis
+      );
+
+      setMedications(
+        existing.medications.join(
+          "\n"
+        )
+      );
+
+      setPrescriptionNotes(
+        existing.notes
+      );
+
+    } else {
+      setDiagnosis("");
+
+      setMedications("");
+
+      setPrescriptionNotes("");
+    }
+
+
+    setPrescriptionFormOpen(
+      false
+    );
+
+  }, [
+    selectedId,
+    selected?.status,
+  ]);
+
+
+  /* =========================================
+     COUNTS
+  ========================================= */
+
+  const counts =
+    useMemo(
+      () => {
+        const now =
+          Date.now();
+
+
+        return {
+          all:
+            bookings.length,
+
+          pending:
+            bookings.filter(
+              (booking) =>
+                booking.status ===
+                "pending"
+            ).length,
+
+          confirmed:
+            bookings.filter(
+              (booking) =>
+                booking.status ===
+                "confirmed"
+            ).length,
+
+          upcoming:
+            bookings.filter(
+              (booking) =>
+                new Date(
+                  booking.startsAt
+                ).getTime() >
+                  now &&
+                (
+                  booking.status ===
+                    "pending" ||
+                  booking.status ===
+                    "confirmed"
+                )
+            ).length,
+
+          completed:
+            bookings.filter(
+              (booking) =>
+                booking.status ===
+                "completed"
+            ).length,
+
+          cancelled:
+            bookings.filter(
+              (booking) =>
+                booking.status ===
+                "cancelled"
+            ).length,
+
+          missed:
+            bookings.filter(
+              (booking) =>
+                booking.status ===
+                "missed"
+            ).length,
+        };
+
+      },
+      [
+        bookings,
+      ]
+    );
+
+
+  /* =========================================
+     STATUS ACTION
+  ========================================= */
+
+  const runAction =
+    (
+      action:
+        () =>
+          Booking | null,
+
+      successMessage:
+        string
+    ) => {
       if (
-        !booking.attachment
+        !profile
       ) {
         return;
       }
 
 
-      const blob =
-        dataUrlToBlob(
-          booking.attachment.dataUrl
+      setError("");
+
+      setMessage("");
+
+
+      const result =
+        action();
+
+
+      if (
+        !result
+      ) {
+        setError(
+          "Unable to update this appointment."
         );
 
-
-      const url =
-        URL.createObjectURL(
-          blob
-        );
+        return;
+      }
 
 
-      window.open(
-        url,
-        "_blank",
-        "noopener,noreferrer"
+      loadBookings(
+        profile
       );
 
 
-      setTimeout(
-        () =>
-          URL.revokeObjectURL(
-            url
-          ),
-        60000
+      setRescheduling(
+        false
+      );
+
+
+      setMessage(
+        successMessage
       );
     };
 
 
+  /* =========================================
+     RESCHEDULE
+  ========================================= */
+
+  const openReschedule =
+    () => {
+      if (
+        !profile ||
+        !selected
+      ) {
+        return;
+      }
+
+
+      const slots =
+        getAvailableSlotsForDoctor(
+          profile.id
+        );
+
+
+      setAvailableSlots(
+        slots
+      );
+
+
+      setSelectedRescheduleDate(
+        slots[0]?.date ??
+          ""
+      );
+
+
+      setRescheduling(
+        true
+      );
+
+
+      setPrescriptionFormOpen(
+        false
+      );
+
+
+      setError("");
+
+      setMessage("");
+    };
+
+
+  const rescheduleDates =
+    useMemo(
+      () =>
+        Array.from(
+          new Set(
+            availableSlots.map(
+              (slot) =>
+                slot.date
+            )
+          )
+        ).sort(),
+      [
+        availableSlots,
+      ]
+    );
+
+
+  const rescheduleSlots =
+    useMemo(
+      () =>
+        availableSlots.filter(
+          (slot) =>
+            slot.date ===
+            selectedRescheduleDate
+        ),
+      [
+        availableSlots,
+        selectedRescheduleDate,
+      ]
+    );
+
+
+  const applyReschedule =
+    (
+      slot:
+        DoctorSlot
+    ) => {
+      if (
+        !selected ||
+        !profile
+      ) {
+        return;
+      }
+
+
+      setError("");
+
+      setMessage("");
+
+
+      const result =
+        rescheduleBooking(
+          selected.id,
+          slot.id
+        );
+
+
+      if (
+        !result
+      ) {
+        setError(
+          "Unable to reschedule. The selected slot may no longer be available."
+        );
+
+
+        setAvailableSlots(
+          getAvailableSlotsForDoctor(
+            profile.id
+          )
+        );
+
+
+        return;
+      }
+
+
+      loadBookings(
+        profile
+      );
+
+
+      setRescheduling(
+        false
+      );
+
+
+      setMessage(
+        "Appointment rescheduled successfully."
+      );
+    };
+
+
+  /* =========================================
+     PRESCRIPTION FORM
+  ========================================= */
+
+  const openPrescriptionForm =
+    () => {
+      if (
+        !selected ||
+        selected.status !==
+          "completed"
+      ) {
+        return;
+      }
+
+
+      const existing =
+        getPrescriptionByBookingId(
+          selected.id
+        );
+
+
+      setPrescription(
+        existing
+      );
+
+
+      setDiagnosis(
+        existing?.diagnosis ??
+          ""
+      );
+
+
+      setMedications(
+        existing?.medications.join(
+          "\n"
+        ) ??
+          ""
+      );
+
+
+      setPrescriptionNotes(
+        existing?.notes ??
+          ""
+      );
+
+
+      setPrescriptionFormOpen(
+        true
+      );
+
+
+      setRescheduling(
+        false
+      );
+
+
+      setError("");
+
+      setMessage("");
+    };
+
+
+  const saveAppointmentPrescription =
+    () => {
+      if (
+        !selected ||
+        !profile
+      ) {
+        return;
+      }
+
+
+      setError("");
+
+      setMessage("");
+
+
+      if (
+        selected.status !==
+        "completed"
+      ) {
+        setError(
+          "A prescription can only be added to a completed appointment."
+        );
+
+        return;
+      }
+
+
+      if (
+        !diagnosis.trim()
+      ) {
+        setError(
+          "Please enter the diagnosis."
+        );
+
+        return;
+      }
+
+
+      const medicationList =
+        medications
+          .split("\n")
+          .map(
+            (item) =>
+              item.trim()
+          )
+          .filter(
+            Boolean
+          );
+
+
+      setSavingPrescription(
+        true
+      );
+
+
+      const now =
+        new Date()
+          .toISOString();
+
+
+      const item:
+        Prescription =
+        prescription
+          ? {
+              ...prescription,
+
+              doctorName:
+                profile.name,
+
+              patientName:
+                selected.patientName,
+
+              diagnosis:
+                diagnosis.trim(),
+
+              medications:
+                medicationList,
+
+              notes:
+                prescriptionNotes.trim(),
+
+              updatedAt:
+                now,
+            }
+          : {
+              id:
+                `prescription-${Date.now()}`,
+
+              bookingId:
+                selected.id,
+
+              doctorId:
+                profile.id,
+
+              doctorName:
+                profile.name,
+
+              patientName:
+                selected.patientName,
+
+              diagnosis:
+                diagnosis.trim(),
+
+              medications:
+                medicationList,
+
+              notes:
+                prescriptionNotes.trim(),
+
+              createdAt:
+                now,
+            };
+
+
+      const saved =
+        savePrescription(
+          item
+        );
+
+
+      setSavingPrescription(
+        false
+      );
+
+
+      if (
+        !saved
+      ) {
+        setError(
+          "Unable to save prescription."
+        );
+
+        return;
+      }
+
+
+      setPrescription(
+        item
+      );
+
+
+      setPrescriptionFormOpen(
+        false
+      );
+
+
+      setMessage(
+        prescription
+          ? "Prescription updated successfully."
+          : "Prescription created successfully. The patient has been notified."
+      );
+    };
+
+
+  /* =========================================
+     MEDICAL FILE
+  ========================================= */
+
+  const viewAttachment =
+    async (
+      booking:
+        Booking
+    ) => {
+      setError("");
+
+
+      const attachment =
+        booking.attachment;
+
+
+      if (
+        !attachment
+      ) {
+        return;
+      }
+
+
+      if (
+        attachment.dataUrl
+      ) {
+        const blob =
+          legacyDataUrlToBlob(
+            attachment.dataUrl
+          );
+
+
+        const url =
+          URL.createObjectURL(
+            blob
+          );
+
+
+        window.open(
+          url,
+          "_blank",
+          "noopener,noreferrer"
+        );
+
+
+        setTimeout(
+          () =>
+            URL.revokeObjectURL(
+              url
+            ),
+          60000
+        );
+
+
+        return;
+      }
+
+
+      const success =
+        await viewMedicalFile(
+          attachment.id
+        );
+
+
+      if (
+        !success
+      ) {
+        setError(
+          "Medical document could not be opened."
+        );
+      }
+    };
+
+
+  const downloadAttachment =
+    async (
+      booking:
+        Booking
+    ) => {
+      setError("");
+
+
+      const attachment =
+        booking.attachment;
+
+
+      if (
+        !attachment
+      ) {
+        return;
+      }
+
+
+      if (
+        attachment.dataUrl
+      ) {
+        const blob =
+          legacyDataUrlToBlob(
+            attachment.dataUrl
+          );
+
+
+        const url =
+          URL.createObjectURL(
+            blob
+          );
+
+
+        const anchor =
+          document.createElement(
+            "a"
+          );
+
+
+        anchor.href =
+          url;
+
+
+        anchor.download =
+          attachment.name;
+
+
+        anchor.click();
+
+
+        URL.revokeObjectURL(
+          url
+        );
+
+
+        return;
+      }
+
+
+      const success =
+        await downloadMedicalFile(
+          attachment.id
+        );
+
+
+      if (
+        !success
+      ) {
+        setError(
+          "Medical document could not be downloaded."
+        );
+      }
+    };
+
+
+  /* =========================================
+     LOADING
+  ========================================= */
+
+  if (
+    loading
+  ) {
+    return (
+      <main className="grid min-h-screen place-items-center">
+
+        <div className="text-center">
+
+          <div className="mx-auto size-9 animate-spin rounded-full border-4 border-emerald-100 border-t-[var(--brand)]" />
+
+          <p className="mt-4 text-sm text-[var(--muted)]">
+            Loading appointments...
+          </p>
+
+        </div>
+
+      </main>
+    );
+  }
+
+
   return (
-    <main className="min-h-screen px-4 py-8 sm:px-8">
+    <main className="min-h-screen bg-[#f7faf8] px-4 py-8 sm:px-8">
 
       <div className="mx-auto max-w-7xl">
 
         <Link
           href="/doctor-dashboard"
-          className="text-sm font-semibold text-[var(--brand)]"
+          className="text-sm font-semibold text-[var(--brand)] hover:underline"
         >
           ← Back to dashboard
         </Link>
 
 
+        {/* HEADER */}
+
         <div className="mt-6">
 
           <p className="text-sm font-semibold text-[var(--brand)]">
-            Appointments
+            Doctor Portal
           </p>
 
-          <h1 className="mt-2 text-3xl font-semibold">
-            All Appointments
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight">
+            Appointment Management
           </h1>
+
+          <p className="mt-2 text-sm text-[var(--muted)]">
+            Confirm, reschedule, cancel and manage patient appointments.
+          </p>
 
         </div>
 
 
-        <div className="mt-7 flex flex-col gap-4 rounded-2xl border border-[var(--line)] bg-white p-4 sm:flex-row">
+        {/* SUCCESS */}
 
-          <input
-            value={
-              query
-            }
-            onChange={(
-              event
-            ) =>
-              setQuery(
-                event.target.value
-              )
-            }
-            placeholder="Search patient or reason..."
-            className="flex-1 rounded-xl border border-[var(--line)] px-4 py-3 text-sm outline-none focus:border-[var(--brand)]"
-          />
+        {message && (
+
+          <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+            ✓ {message}
+          </div>
+
+        )}
 
 
-          <div className="flex flex-wrap gap-2">
+        {/* ERROR */}
 
-            {(
-              [
-                "all",
-                "pending",
-                "confirmed",
-                "cancelled",
-              ] as Filter[]
-            ).map(
+        {error && (
+
+          <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+
+        )}
+
+
+        {/* FILTERS */}
+
+        <section className="mt-7 rounded-2xl border border-[var(--line)] bg-white p-4">
+
+          <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
+
+            <input
+              value={
+                query
+              }
+
+              onChange={(
+                event
+              ) =>
+                setQuery(
+                  event.target.value
+                )
+              }
+
+              placeholder="Search patient, email or reason..."
+
+              className="rounded-xl border border-[var(--line)] px-4 py-3 text-sm outline-none transition focus:border-[var(--brand)]"
+            />
+
+
+            <input
+              type="date"
+
+              value={
+                dateFilter
+              }
+
+              onChange={(
+                event
+              ) =>
+                setDateFilter(
+                  event.target.value
+                )
+              }
+
+              className="rounded-xl border border-[var(--line)] px-4 py-3 text-sm outline-none transition focus:border-[var(--brand)]"
+            />
+
+          </div>
+
+
+          <div className="mt-4 flex flex-wrap gap-2">
+
+            {filters.map(
               (
                 item
               ) => (
@@ -557,214 +1591,1200 @@ export default function AllAppointmentsPage() {
                   key={
                     item
                   }
+
                   type="button"
+
                   onClick={() =>
                     setFilter(
                       item
                     )
                   }
-                  className={`rounded-xl px-4 py-2 text-sm font-semibold capitalize ${
+
+                  className={`rounded-xl px-4 py-2 text-sm font-semibold capitalize transition ${
                     filter ===
                     item
                       ? "bg-[var(--brand)] text-white"
-                      : "bg-stone-100"
+                      : "bg-stone-100 hover:bg-stone-200"
                   }`}
                 >
-                  {
-                    item
-                  }
+
+                  {item}
+
+                  <span className="ml-1.5 text-xs opacity-80">
+                    {
+                      counts[item]
+                    }
+                  </span>
+
                 </button>
 
               )
             )}
 
+
+            {(dateFilter ||
+              query) && (
+
+              <button
+                type="button"
+
+                onClick={() => {
+                  setQuery("");
+
+                  setDateFilter("");
+                }}
+
+                className="rounded-xl border border-[var(--line)] bg-white px-4 py-2 text-sm font-semibold hover:border-red-200 hover:text-red-600"
+              >
+                Clear filters
+              </button>
+
+            )}
+
           </div>
 
-        </div>
+        </section>
 
 
-        <div className="mt-6 overflow-hidden rounded-2xl border border-[var(--line)] bg-white">
+        {/* MAIN */}
 
-          {loading ? (
+        <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_25rem]">
 
-            <div className="p-10 text-center text-sm text-[var(--muted)]">
-              Loading appointments...
+          {/* APPOINTMENT LIST */}
+
+          <section className="overflow-hidden rounded-2xl border border-[var(--line)] bg-white">
+
+            <div className="border-b border-[var(--line)] px-5 py-4">
+
+              <p className="font-semibold">
+                Appointments
+              </p>
+
+              <p className="mt-1 text-xs text-[var(--muted)]">
+                {visible.length} appointment
+                {visible.length === 1 ? "" : "s"} found
+              </p>
+
             </div>
 
-          ) : visible.length >
+
+            {visible.length >
             0 ? (
 
-            <div className="divide-y divide-[var(--line)]">
+              <div className="divide-y divide-[var(--line)]">
 
-              {visible.map(
-                (
-                  appointment
-                ) => {
+                {visible.map(
+                  (
+                    booking
+                  ) => (
 
-                  const booking =
-                    bookings.find(
-                      (
-                        item
-                      ) =>
-                        item.id ===
-                        appointment.id
-                    );
-
-
-                  return (
-                    <div
+                    <button
                       key={
-                        appointment.id
+                        booking.id
                       }
-                      className="grid gap-4 p-5 md:grid-cols-[1.2fr_1fr_1fr_auto]"
+
+                      type="button"
+
+                      onClick={() => {
+
+                        setSelectedId(
+                          booking.id
+                        );
+
+                        setRescheduling(
+                          false
+                        );
+
+                        setPrescriptionFormOpen(
+                          false
+                        );
+
+                        setMessage("");
+
+                        setError("");
+                      }}
+
+                      className={`w-full p-5 text-left transition ${
+                        selectedId ===
+                        booking.id
+                          ? "bg-emerald-50/60"
+                          : "hover:bg-stone-50"
+                      }`}
                     >
 
-                      <div>
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 
-                        <p className="font-semibold">
-                          {
-                            appointment.patient.name
-                          }
-                        </p>
+                        <div className="flex items-start gap-4">
 
-                        <p className="mt-1 text-sm text-[var(--muted)]">
-                          {
-                            appointment.patient.age
-                          }{" "}
-                          years ·{" "}
-                          {
-                            appointment.reason
-                          }
-                        </p>
+                          <div className="grid size-12 shrink-0 place-items-center rounded-full bg-emerald-100 text-sm font-semibold text-[var(--brand)]">
 
-                      </div>
+                            {getInitials(
+                              booking.patientName
+                            )}
+
+                          </div>
 
 
-                      <div>
+                          <div className="min-w-0">
 
-                        <p className="text-xs text-[var(--muted)]">
-                          Appointment
-                        </p>
-
-                        <p className="mt-1 text-sm font-semibold">
-
-                          {new Intl.DateTimeFormat(
-                            "en-IN",
-                            {
-                              dateStyle:
-                                "medium",
-                            }
-                          ).format(
-                            new Date(
-                              appointment.startsAt
-                            )
-                          )}
-
-                        </p>
-
-                        <p className="mt-1 text-xs text-[var(--muted)]">
-
-                          {new Intl.DateTimeFormat(
-                            "en-IN",
-                            {
-                              timeStyle:
-                                "short",
-                            }
-                          ).format(
-                            new Date(
-                              appointment.startsAt
-                            )
-                          )}
-
-                        </p>
-
-                      </div>
-
-
-                      <div>
-
-                        {booking && (
-                          <>
-                            <p className="text-xs text-[var(--muted)]">
-                              Contact
-                            </p>
-
-                            <p className="mt-1 break-all text-sm">
+                            <p className="font-semibold">
                               {
-                                booking.patientEmail
+                                booking.patientName
                               }
                             </p>
 
-                            <p className="mt-1 text-sm">
+
+                            <p className="mt-1 line-clamp-2 text-sm text-[var(--muted)]">
                               {
-                                booking.patientPhone
+                                booking.reason
                               }
                             </p>
-                          </>
-                        )}
-
-                      </div>
 
 
-                      <div className="flex flex-col items-start gap-2">
+                            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-[var(--muted)]">
+
+                              <span>
+                                📅{" "}
+                                {formatDate(
+                                  booking.startsAt
+                                )}
+                              </span>
+
+
+                              <span>
+                                🕐{" "}
+                                {formatTime(
+                                  booking.startsAt
+                                )}
+                              </span>
+
+
+                              <span>
+                                🩺{" "}
+                                {
+                                  booking.appointmentType ??
+                                  "In-person"
+                                }
+                              </span>
+
+                            </div>
+
+
+                            {booking.attachment && (
+
+                              <p className="mt-2 text-xs font-semibold text-[var(--brand)]">
+                                📎 Medical document attached
+                              </p>
+
+                            )}
+
+                          </div>
+
+                        </div>
+
 
                         <span
-                          className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${
-                            appointment.status ===
-                            "confirmed"
-                              ? "bg-emerald-50 text-emerald-700"
-                              : appointment.status ===
-                                "pending"
-                              ? "bg-amber-50 text-amber-700"
-                              : "bg-stone-100 text-stone-600"
-                          }`}
+                          className={`w-fit shrink-0 rounded-full border px-3 py-1 text-xs font-semibold capitalize ${getStatusClasses(
+                            booking.status
+                          )}`}
                         >
                           {
-                            appointment.status
+                            booking.status
                           }
                         </span>
 
+                      </div>
 
-                        {booking?.attachment && (
+                    </button>
 
-                          <button
-                            type="button"
-                            onClick={() =>
-                              openAttachment(
-                                booking
-                              )
+                  )
+                )}
+
+              </div>
+
+            ) : (
+
+              <div className="p-14 text-center">
+
+                <div className="mx-auto grid size-12 place-items-center rounded-full bg-stone-100 text-xl">
+                  📅
+                </div>
+
+                <p className="mt-4 font-semibold">
+                  No appointments found
+                </p>
+
+                <p className="mt-2 text-sm text-[var(--muted)]">
+                  Try changing your search or filters.
+                </p>
+
+              </div>
+
+            )}
+
+          </section>
+
+
+          {/* DETAILS */}
+
+          <aside className="h-fit rounded-2xl border border-[var(--line)] bg-white p-5 xl:sticky xl:top-24">
+
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--brand)]">
+              Appointment Details
+            </p>
+
+
+            {selected ? (
+
+              <div className="mt-5">
+
+                {/* PATIENT */}
+
+                <div className="flex items-center gap-3">
+
+                  <div className="grid size-12 place-items-center rounded-full bg-emerald-100 text-sm font-semibold text-[var(--brand)]">
+
+                    {getInitials(
+                      selected.patientName
+                    )}
+
+                  </div>
+
+
+                  <div>
+
+                    <h2 className="font-semibold">
+                      {
+                        selected.patientName
+                      }
+                    </h2>
+
+                    <p className="text-xs text-[var(--muted)]">
+                      {
+                        selected.patientAge
+                      }{" "}
+                      years old
+                    </p>
+
+                  </div>
+
+                </div>
+
+
+                {/* STATUS */}
+
+                <span
+                  className={`mt-5 inline-flex rounded-full border px-3 py-1 text-xs font-semibold capitalize ${getStatusClasses(
+                    selected.status
+                  )}`}
+                >
+                  {
+                    selected.status
+                  }
+                </span>
+
+
+                {/* DETAILS */}
+
+                <dl className="mt-6 space-y-4 text-sm">
+
+                  <div>
+
+                    <dt className="text-[var(--muted)]">
+                      Appointment
+                    </dt>
+
+                    <dd className="mt-1 font-semibold">
+
+                      {formatDate(
+                        selected.startsAt
+                      )}
+
+                      <br />
+
+                      {formatTime(
+                        selected.startsAt
+                      )}
+
+                    </dd>
+
+                  </div>
+
+
+                  <div>
+
+                    <dt className="text-[var(--muted)]">
+                      Appointment type
+                    </dt>
+
+                    <dd className="mt-1 font-semibold">
+                      {
+                        selected.appointmentType ??
+                        "In-person"
+                      }
+                    </dd>
+
+                  </div>
+
+
+                  <div>
+
+                    <dt className="text-[var(--muted)]">
+                      Reason
+                    </dt>
+
+                    <dd className="mt-1 font-semibold">
+                      {
+                        selected.reason
+                      }
+                    </dd>
+
+                  </div>
+
+
+                  <div>
+
+                    <dt className="text-[var(--muted)]">
+                      Email
+                    </dt>
+
+                    <dd className="mt-1 break-all font-semibold">
+                      {
+                        selected.patientEmail
+                      }
+                    </dd>
+
+                  </div>
+
+
+                  <div>
+
+                    <dt className="text-[var(--muted)]">
+                      Phone
+                    </dt>
+
+                    <dd className="mt-1 font-semibold">
+                      {
+                        selected.patientPhone
+                      }
+                    </dd>
+
+                  </div>
+
+
+                  <div>
+
+                    <dt className="text-[var(--muted)]">
+                      Location
+                    </dt>
+
+                    <dd className="mt-1 font-semibold">
+                      {
+                        selected.doctorLocation ??
+                        "Clinic"
+                      }
+                    </dd>
+
+                  </div>
+
+
+                  <div>
+
+                    <dt className="text-[var(--muted)]">
+                      Appointment ID
+                    </dt>
+
+                    <dd className="mt-1 break-all font-mono text-xs font-medium">
+                      {
+                        selected.id
+                      }
+                    </dd>
+
+                  </div>
+
+                </dl>
+
+
+                {/* MEDICAL DOCUMENT */}
+
+                {selected.attachment && (
+
+                  <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50/50 p-4">
+
+                    <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                      Medical Document
+                    </p>
+
+
+                    <p className="mt-2 truncate text-sm font-semibold">
+
+                      📎{" "}
+
+                      {
+                        selected.attachment.name
+                      }
+
+                    </p>
+
+
+                    <p className="mt-1 text-xs text-[var(--muted)]">
+
+                      {formatFileSize(
+                        selected.attachment.size
+                      )}
+
+                    </p>
+
+
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+
+                      <button
+                        type="button"
+
+                        onClick={() =>
+                          viewAttachment(
+                            selected
+                          )
+                        }
+
+                        className="rounded-lg border border-[var(--brand)] bg-white px-3 py-2 text-xs font-semibold text-[var(--brand)]"
+                      >
+                        View
+                      </button>
+
+
+                      <button
+                        type="button"
+
+                        onClick={() =>
+                          downloadAttachment(
+                            selected
+                          )
+                        }
+
+                        className="rounded-lg bg-[var(--brand)] px-3 py-2 text-xs font-semibold text-white"
+                      >
+                        Download
+                      </button>
+
+                    </div>
+
+                  </div>
+
+                )}
+
+
+                {/* PENDING */}
+
+                {selected.status ===
+                  "pending" && (
+
+                  <div className="mt-7">
+
+                    <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
+                      Appointment request
+                    </p>
+
+
+                    <div className="grid grid-cols-2 gap-2">
+
+                      <button
+                        type="button"
+
+                        onClick={() =>
+                          runAction(
+                            () =>
+                              confirmBooking(
+                                selected.id
+                              ),
+                            "Appointment confirmed."
+                          )
+                        }
+
+                        className="rounded-xl bg-[var(--brand)] px-4 py-3 text-sm font-semibold text-white hover:bg-[var(--brand-deep)]"
+                      >
+                        Confirm
+                      </button>
+
+
+                      <button
+                        type="button"
+
+                        onClick={() =>
+                          runAction(
+                            () =>
+                              declineBooking(
+                                selected.id
+                              ),
+                            "Appointment declined."
+                          )
+                        }
+
+                        className="rounded-xl border border-red-200 bg-white px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50"
+                      >
+                        Decline
+                      </button>
+
+                    </div>
+
+                  </div>
+
+                )}
+
+
+                {/* CONFIRMED + FUTURE */}
+
+                {selected.status ===
+                  "confirmed" &&
+                  new Date(
+                    selected.startsAt
+                  ).getTime() >
+                    Date.now() && (
+
+                    <div className="mt-7">
+
+                      <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
+                        Manage appointment
+                      </p>
+
+
+                      <div className="grid grid-cols-2 gap-2">
+
+                        <button
+                          type="button"
+
+                          onClick={
+                            openReschedule
+                          }
+
+                          className="rounded-xl border border-[var(--brand)] bg-white px-4 py-3 text-sm font-semibold text-[var(--brand)] hover:bg-emerald-50"
+                        >
+                          Reschedule
+                        </button>
+
+
+                        <button
+                          type="button"
+
+                          onClick={() => {
+
+                            const approved =
+                              window.confirm(
+                                "Are you sure you want to cancel this appointment?"
+                              );
+
+
+                            if (
+                              !approved
+                            ) {
+                              return;
                             }
-                            className="text-xs font-semibold text-[var(--brand)]"
-                          >
-                            📎 View document
-                          </button>
 
-                        )}
+
+                            runAction(
+                              () =>
+                                cancelBooking(
+                                  selected.id
+                                ),
+                              "Appointment cancelled."
+                            );
+                          }}
+
+                          className="rounded-xl border border-red-200 bg-white px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50"
+                        >
+                          Cancel
+                        </button>
 
                       </div>
 
                     </div>
-                  );
-                }
-              )}
 
-            </div>
+                  )}
 
-          ) : (
 
-            <div className="p-12 text-center">
+                {/* CONFIRMED + PAST */}
 
-              <p className="font-semibold">
-                No appointments found
-              </p>
+                {selected.status ===
+                  "confirmed" &&
+                  new Date(
+                    selected.startsAt
+                  ).getTime() <=
+                    Date.now() && (
 
-              <p className="mt-2 text-sm text-[var(--muted)]">
-                Try changing your search or filter.
-              </p>
+                    <div className="mt-7">
 
-            </div>
+                      <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
+                        Appointment outcome
+                      </p>
 
-          )}
+
+                      <div className="grid grid-cols-2 gap-2">
+
+                        <button
+                          type="button"
+
+                          onClick={() =>
+                            runAction(
+                              () =>
+                                markBookingCompleted(
+                                  selected.id
+                                ),
+                              "Appointment marked as completed."
+                            )
+                          }
+
+                          className="rounded-xl bg-[var(--brand)] px-4 py-3 text-sm font-semibold text-white hover:bg-[var(--brand-deep)]"
+                        >
+                          Completed
+                        </button>
+
+
+                        <button
+                          type="button"
+
+                          onClick={() =>
+                            runAction(
+                              () =>
+                                markBookingMissed(
+                                  selected.id
+                                ),
+                              "Appointment marked as missed."
+                            )
+                          }
+
+                          className="rounded-xl border border-stone-300 bg-white px-4 py-3 text-sm font-semibold hover:bg-stone-50"
+                        >
+                          Missed
+                        </button>
+
+                      </div>
+
+                    </div>
+
+                  )}
+
+
+                {/* COMPLETED + PRESCRIPTION */}
+
+                {selected.status ===
+                  "completed" && (
+
+                  <div className="mt-7">
+
+                    <div className="rounded-2xl border border-blue-200 bg-blue-50/50 p-4">
+
+                      <div className="flex items-start justify-between gap-4">
+
+                        <div>
+
+                          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">
+                            Prescription
+                          </p>
+
+                          <p className="mt-2 font-semibold text-blue-950">
+
+                            {prescription
+                              ? "Prescription Available"
+                              : "No prescription added"}
+
+                          </p>
+
+                          <p className="mt-1 text-xs leading-5 text-blue-700">
+
+                            {prescription
+                              ? "The prescription is available to the patient from My Appointments."
+                              : "Add a prescription for this completed consultation."}
+
+                          </p>
+
+                        </div>
+
+
+                        <span className="text-xl">
+                          💊
+                        </span>
+
+                      </div>
+
+
+                      {prescription && (
+
+                        <div className="mt-4 rounded-xl bg-white/70 p-3">
+
+                          <p className="text-xs text-[var(--muted)]">
+                            Diagnosis
+                          </p>
+
+                          <p className="mt-1 text-sm font-semibold">
+                            {
+                              prescription.diagnosis
+                            }
+                          </p>
+
+
+                          <p className="mt-3 text-xs text-[var(--muted)]">
+                            Medicines
+                          </p>
+
+                          <p className="mt-1 text-sm font-semibold">
+                            {
+                              prescription.medications.length
+                            }{" "}
+                            medication
+                            {
+                              prescription.medications.length ===
+                              1
+                                ? ""
+                                : "s"
+                            }
+                          </p>
+
+                        </div>
+
+                      )}
+
+
+                      <button
+                        type="button"
+
+                        onClick={
+                          openPrescriptionForm
+                        }
+
+                        className="mt-4 w-full rounded-xl bg-blue-700 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-800"
+                      >
+
+                        {prescription
+                          ? "Edit Prescription"
+                          : "+ Create Prescription"}
+
+                      </button>
+
+                    </div>
+
+
+                    <div className="mt-4 rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-center">
+
+                      <p className="text-sm font-semibold">
+                        Appointment completed
+                      </p>
+
+                      <p className="mt-1 text-xs text-[var(--muted)]">
+                        Appointment status is now read-only.
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                )}
+
+
+                {/* CANCELLED / MISSED */}
+
+                {(
+                  selected.status ===
+                    "cancelled" ||
+                  selected.status ===
+                    "missed"
+                ) && (
+
+                  <div className="mt-7 rounded-xl border border-stone-200 bg-stone-100 px-4 py-3 text-center">
+
+                    <p className="text-sm font-semibold">
+                      Read-only appointment
+                    </p>
+
+                    <p className="mt-1 text-xs text-[var(--muted)]">
+                      No further appointment changes are available.
+                    </p>
+
+                  </div>
+
+                )}
+
+
+                {/* PRESCRIPTION FORM */}
+
+                {selected.status ===
+                  "completed" &&
+                  prescriptionFormOpen && (
+
+                  <div className="mt-7 border-t border-[var(--line)] pt-6">
+
+                    <div className="flex items-start justify-between gap-4">
+
+                      <div>
+
+                        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--brand)]">
+                          Medical Prescription
+                        </p>
+
+                        <h3 className="mt-1 font-semibold">
+                          {prescription
+                            ? "Edit prescription"
+                            : "Create prescription"}
+                        </h3>
+
+                      </div>
+
+
+                      <button
+                        type="button"
+
+                        onClick={() =>
+                          setPrescriptionFormOpen(
+                            false
+                          )
+                        }
+
+                        className="text-xs font-semibold text-red-600 hover:underline"
+                      >
+                        Close
+                      </button>
+
+                    </div>
+
+
+                    <div className="mt-5 space-y-4">
+
+                      <label className="block">
+
+                        <span className="text-sm font-medium">
+                          Diagnosis
+                        </span>
+
+                        <input
+                          value={
+                            diagnosis
+                          }
+
+                          onChange={(
+                            event
+                          ) =>
+                            setDiagnosis(
+                              event.target.value
+                            )
+                          }
+
+                          placeholder="e.g. Viral fever"
+
+                          className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#fbfdfc] px-4 py-3 text-sm outline-none focus:border-[var(--brand)]"
+                        />
+
+                      </label>
+
+
+                      <label className="block">
+
+                        <span className="text-sm font-medium">
+                          Medications
+                        </span>
+
+                        <p className="mt-1 text-xs text-[var(--muted)]">
+                          Enter one medication per line. Include dosage, frequency and duration.
+                        </p>
+
+                        <textarea
+                          rows={
+                            7
+                          }
+
+                          value={
+                            medications
+                          }
+
+                          onChange={(
+                            event
+                          ) =>
+                            setMedications(
+                              event.target.value
+                            )
+                          }
+
+                          placeholder={
+`Paracetamol 500 mg — 1 tablet after food — twice daily — 3 days
+Vitamin C 500 mg — once daily — 5 days`
+                          }
+
+                          className="mt-2 w-full resize-none rounded-xl border border-[var(--line)] bg-[#fbfdfc] px-4 py-3 text-sm leading-6 outline-none focus:border-[var(--brand)]"
+                        />
+
+                      </label>
+
+
+                      <label className="block">
+
+                        <span className="text-sm font-medium">
+                          Advice / Notes
+                        </span>
+
+                        <textarea
+                          rows={
+                            4
+                          }
+
+                          value={
+                            prescriptionNotes
+                          }
+
+                          onChange={(
+                            event
+                          ) =>
+                            setPrescriptionNotes(
+                              event.target.value
+                            )
+                          }
+
+                          placeholder="Rest well, drink adequate fluids, follow up if symptoms persist..."
+
+                          className="mt-2 w-full resize-none rounded-xl border border-[var(--line)] bg-[#fbfdfc] px-4 py-3 text-sm leading-6 outline-none focus:border-[var(--brand)]"
+                        />
+
+                      </label>
+
+
+                      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs leading-5 text-emerald-700">
+                        Saving a new prescription will notify the patient automatically.
+                      </div>
+
+
+                      <div className="grid grid-cols-2 gap-2">
+
+                        <button
+                          type="button"
+
+                          disabled={
+                            savingPrescription
+                          }
+
+                          onClick={() =>
+                            setPrescriptionFormOpen(
+                              false
+                            )
+                          }
+
+                          className="rounded-xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold disabled:opacity-50"
+                        >
+                          Cancel
+                        </button>
+
+
+                        <button
+                          type="button"
+
+                          disabled={
+                            savingPrescription
+                          }
+
+                          onClick={
+                            saveAppointmentPrescription
+                          }
+
+                          className="rounded-xl bg-[var(--brand)] px-4 py-3 text-sm font-semibold text-white hover:bg-[var(--brand-deep)] disabled:opacity-50"
+                        >
+
+                          {savingPrescription
+                            ? "Saving..."
+                            : prescription
+                            ? "Update Prescription"
+                            : "Save Prescription"}
+
+                        </button>
+
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                )}
+
+
+                {/* RESCHEDULE PANEL */}
+
+                {rescheduling && (
+
+                  <div className="mt-7 border-t border-[var(--line)] pt-6">
+
+                    <div className="flex items-center justify-between gap-3">
+
+                      <div>
+
+                        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--brand)]">
+                          Reschedule
+                        </p>
+
+                        <h3 className="mt-1 font-semibold">
+                          Select another slot
+                        </h3>
+
+                      </div>
+
+
+                      <button
+                        type="button"
+
+                        onClick={() =>
+                          setRescheduling(
+                            false
+                          )
+                        }
+
+                        className="text-xs font-semibold text-red-600 hover:underline"
+                      >
+                        Close
+                      </button>
+
+                    </div>
+
+
+                    {rescheduleDates.length >
+                    0 ? (
+
+                      <>
+
+                        <div className="mt-4 flex flex-wrap gap-2">
+
+                          {rescheduleDates.map(
+                            (
+                              item
+                            ) => (
+
+                              <button
+                                key={
+                                  item
+                                }
+
+                                type="button"
+
+                                onClick={() =>
+                                  setSelectedRescheduleDate(
+                                    item
+                                  )
+                                }
+
+                                className={`rounded-lg border px-3 py-2 text-xs font-semibold transition ${
+                                  selectedRescheduleDate ===
+                                  item
+                                    ? "border-[var(--brand)] bg-[var(--brand-soft)] text-[var(--brand)]"
+                                    : "border-[var(--line)] hover:border-[var(--brand)]"
+                                }`}
+                              >
+
+                                {new Intl.DateTimeFormat(
+                                  "en-IN",
+                                  {
+                                    weekday:
+                                      "short",
+
+                                    day:
+                                      "numeric",
+
+                                    month:
+                                      "short",
+                                  }
+                                ).format(
+                                  new Date(
+                                    `${item}T00:00:00`
+                                  )
+                                )}
+
+                              </button>
+
+                            )
+                          )}
+
+                        </div>
+
+
+                        {rescheduleSlots.length >
+                        0 ? (
+
+                          <div className="mt-3 grid grid-cols-2 gap-2">
+
+                            {rescheduleSlots.map(
+                              (
+                                slot
+                              ) => (
+
+                                <button
+                                  key={
+                                    slot.id
+                                  }
+
+                                  type="button"
+
+                                  onClick={() => {
+
+                                    const approved =
+                                      window.confirm(
+                                        `Move this appointment to ${slot.date} at ${slot.time}?`
+                                      );
+
+
+                                    if (
+                                      approved
+                                    ) {
+                                      applyReschedule(
+                                        slot
+                                      );
+                                    }
+                                  }}
+
+                                  className="rounded-lg border border-[var(--line)] px-3 py-2.5 text-xs font-semibold transition hover:border-[var(--brand)] hover:bg-emerald-50 hover:text-[var(--brand)]"
+                                >
+                                  {
+                                    slot.time
+                                  }
+                                </button>
+
+                              )
+                            )}
+
+                          </div>
+
+                        ) : (
+
+                          <p className="mt-4 rounded-xl bg-stone-50 p-3 text-sm text-[var(--muted)]">
+                            No slots available on this date.
+                          </p>
+
+                        )}
+
+                      </>
+
+                    ) : (
+
+                      <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
+                        No alternative appointment slots are available.
+                      </p>
+
+                    )}
+
+                  </div>
+
+                )}
+
+              </div>
+
+            ) : (
+
+              <div className="py-12 text-center">
+
+                <div className="mx-auto grid size-11 place-items-center rounded-full bg-stone-100">
+                  👤
+                </div>
+
+                <p className="mt-4 text-sm text-[var(--muted)]">
+                  Select an appointment to view details.
+                </p>
+
+              </div>
+
+            )}
+
+          </aside>
 
         </div>
 

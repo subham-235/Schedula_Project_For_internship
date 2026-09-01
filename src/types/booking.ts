@@ -1,45 +1,50 @@
+import type {
+  AppointmentType,
+} from "@/types/appointment";
+
+
 export type BookingAttachment = {
+  id: string;
   name: string;
-
   type: string;
-
   size: number;
 
-  dataUrl: string;
+  // Compatibility with old localStorage bookings
+  dataUrl?: string;
 };
+
 
 export type BookingStatus =
   | "pending"
   | "confirmed"
-  | "cancelled";
+  | "completed"
+  | "cancelled"
+  | "missed";
+
 
 export type Booking = {
   id: string;
 
   doctorId: string;
-
   doctorName: string;
-
   specialty: string;
-
   doctorLocation?: string;
 
   slotId?: string;
 
+  patientId?: string;
+
   patientName: string;
-
   patientEmail: string;
-
   patientPhone: string;
-
   patientAge: number;
 
   reason: string;
 
+  appointmentType: AppointmentType;
+
   date: string;
-
   time: string;
-
   startsAt: string;
 
   fee: number;
@@ -47,6 +52,9 @@ export type Booking = {
   status: BookingStatus;
 
   createdAt: string;
+
+  rescheduledAt?: string;
+  originalStartsAt?: string;
 
   attachment?: BookingAttachment;
 };
