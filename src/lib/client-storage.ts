@@ -324,7 +324,8 @@ function timeTo24Hour(value: string) {
 
   const [clock, period] = value.split(" ");
 
-  let [hours, minutes] = clock.split(":").map(Number);
+  const [initialHours, minutes] = clock.split(":").map(Number);
+  let hours = initialHours;
 
   if (period === "PM" && hours !== 12) {
     hours += 12;

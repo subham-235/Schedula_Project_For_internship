@@ -4,7 +4,7 @@ export default function NotFound() {
   return (
     <main className="grid min-h-screen place-items-center px-6">
       <div className="max-w-md text-center">
-        <div className="mx-auto grid size-14 place-items-center rounded-2xl bg-[var(--brand)] text-xl font-bold text-white">
+        <div className="mx-auto grid size-14 place-items-center rounded-xl bg-[var(--brand)] text-xl font-bold text-white">
           S
         </div>
         <h1 className="mt-6 text-3xl font-semibold tracking-tight">Page not found</h1>

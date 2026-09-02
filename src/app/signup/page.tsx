@@ -39,6 +39,8 @@ import type {
   Doctor,
 } from "@/types/doctor";
 
+import { Stethoscope, UserRound } from "lucide-react";
+
 
 export default function SignupPage() {
   const router =
@@ -518,20 +520,20 @@ export default function SignupPage() {
 
       <main className="grid min-h-[calc(100vh-73px)] place-items-center px-4 py-12">
 
-        <div className="grid w-full max-w-6xl overflow-hidden rounded-[2rem] border border-[var(--line)] bg-white soft-shadow lg:grid-cols-[.9fr_1.1fr]">
+        <div className="grid w-full max-w-6xl overflow-hidden rounded-[18px] border border-[var(--line)] bg-white soft-shadow lg:grid-cols-[.9fr_1.1fr]">
 
-          <section className="hidden bg-[var(--brand)] p-10 text-white lg:block">
+          <section className="hidden border-l-4 border-[#E5483B] bg-[#12100F] p-10 text-white lg:block">
 
             <span className="inline-flex rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold">
               Join Schedula
             </span>
 
-            <h1 className="mt-8 text-4xl font-semibold tracking-tight">
+            <h1 className="font-editorial mt-8 text-5xl tracking-[-0.045em]">
               Healthcare scheduling,
               simplified.
             </h1>
 
-            <p className="mt-5 max-w-sm text-sm leading-7 text-emerald-50/80">
+            <p className="mt-5 max-w-sm text-sm leading-7 text-[#F7F4EF]/80">
               Patients can discover and
               book doctors while doctors
               manage their professional
@@ -547,7 +549,7 @@ export default function SignupPage() {
               Create account
             </p>
 
-            <h2 className="mt-2 text-3xl font-semibold">
+            <h2 className="font-editorial mt-2 text-4xl">
               Sign up to Schedula
             </h2>
 
@@ -564,11 +566,11 @@ export default function SignupPage() {
                 className={`rounded-xl border p-4 text-left ${
                   role ===
                   "patient"
-                    ? "border-[var(--brand)] bg-emerald-50"
+                    ? "border-[var(--brand)] bg-[#F7F4EF]"
                     : "border-[var(--line)]"
                 }`}
               >
-                👤
+                <UserRound className="mx-auto" size={22} />
 
                 <span className="mt-2 block font-semibold">
                   Patient
@@ -590,11 +592,11 @@ export default function SignupPage() {
                 className={`rounded-xl border p-4 text-left ${
                   role ===
                   "doctor"
-                    ? "border-[var(--brand)] bg-emerald-50"
+                    ? "border-[var(--brand)] bg-[#F7F4EF]"
                     : "border-[var(--line)]"
                 }`}
               >
-                🩺
+                <Stethoscope className="mx-auto" size={22} />
 
                 <span className="mt-2 block font-semibold">
                   Doctor
@@ -649,7 +651,7 @@ export default function SignupPage() {
                           ? "Dr. John Doe"
                           : "John Doe"
                       }
-                      className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#fbfdfc] px-4 py-3 text-sm outline-none focus:border-[var(--brand)]"
+                      className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#FFFFFF] px-4 py-3 text-sm outline-none focus:border-[var(--brand)]"
                     />
 
                   </label>
@@ -676,7 +678,7 @@ export default function SignupPage() {
                         )
                       }
                       placeholder="you@example.com"
-                      className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#fbfdfc] px-4 py-3 text-sm outline-none focus:border-[var(--brand)]"
+                      className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#FFFFFF] px-4 py-3 text-sm outline-none focus:border-[var(--brand)]"
                     />
 
                   </label>
@@ -717,7 +719,7 @@ export default function SignupPage() {
                             )
                           }
                           placeholder="9876543210"
-                          className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#fbfdfc] px-4 py-3 text-sm outline-none"
+                          className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#FFFFFF] px-4 py-3 text-sm outline-none"
                         />
                       </label>
 
@@ -740,7 +742,7 @@ export default function SignupPage() {
                             )
                           }
                           placeholder="Salt Lake, Kolkata"
-                          className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#fbfdfc] px-4 py-3 text-sm outline-none"
+                          className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#FFFFFF] px-4 py-3 text-sm outline-none"
                         />
                       </label>
 
@@ -775,7 +777,7 @@ export default function SignupPage() {
                                 .value
                             )
                           }
-                          className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#fbfdfc] px-4 py-3 text-sm"
+                          className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#FFFFFF] px-4 py-3 text-sm"
                         >
                           <option value="">
                             Select specialty
@@ -831,7 +833,7 @@ export default function SignupPage() {
                             )
                           }
                           placeholder="WBMC-12345"
-                          className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#fbfdfc] px-4 py-3 text-sm"
+                          className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#FFFFFF] px-4 py-3 text-sm"
                         />
                       </label>
 
@@ -855,7 +857,7 @@ export default function SignupPage() {
                             )
                           }
                           placeholder="MBBS, MD"
-                          className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#fbfdfc] px-4 py-3 text-sm"
+                          className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#FFFFFF] px-4 py-3 text-sm"
                         />
                       </label>
 
@@ -881,7 +883,7 @@ export default function SignupPage() {
                             )
                           }
                           placeholder="5"
-                          className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#fbfdfc] px-4 py-3 text-sm"
+                          className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#FFFFFF] px-4 py-3 text-sm"
                         />
                       </label>
 
@@ -907,7 +909,7 @@ export default function SignupPage() {
                             )
                           }
                           placeholder="700"
-                          className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#fbfdfc] px-4 py-3 text-sm"
+                          className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#FFFFFF] px-4 py-3 text-sm"
                         />
                       </label>
 
@@ -931,7 +933,7 @@ export default function SignupPage() {
                             )
                           }
                           placeholder="English, Bengali, Hindi"
-                          className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#fbfdfc] px-4 py-3 text-sm"
+                          className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#FFFFFF] px-4 py-3 text-sm"
                         />
                       </label>
 
@@ -956,7 +958,7 @@ export default function SignupPage() {
                             )
                           }
                           placeholder="https://example.com/profile.jpg"
-                          className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#fbfdfc] px-4 py-3 text-sm"
+                          className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#FFFFFF] px-4 py-3 text-sm"
                         />
 
                       </label>
@@ -985,7 +987,7 @@ export default function SignupPage() {
                             )
                           }
                           placeholder="Tell patients about your experience and practice."
-                          className="mt-2 w-full resize-none rounded-xl border border-[var(--line)] bg-[#fbfdfc] px-4 py-3 text-sm"
+                          className="mt-2 w-full resize-none rounded-xl border border-[var(--line)] bg-[#FFFFFF] px-4 py-3 text-sm"
                         />
 
                       </label>
@@ -1025,7 +1027,7 @@ export default function SignupPage() {
                             .value
                         )
                       }
-                      className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#fbfdfc] px-4 py-3 text-sm"
+                      className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#FFFFFF] px-4 py-3 text-sm"
                     />
                   </label>
 
@@ -1048,7 +1050,7 @@ export default function SignupPage() {
                             .value
                         )
                       }
-                      className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#fbfdfc] px-4 py-3 text-sm"
+                      className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#FFFFFF] px-4 py-3 text-sm"
                     />
                   </label>
 
@@ -1058,7 +1060,7 @@ export default function SignupPage() {
 
 
               {error && (
-                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                <div className="rounded-xl border border-[#F2C2A7] bg-[#F7F4EF] px-4 py-3 text-sm text-[#C9362D]">
                   {error}
                 </div>
               )}

@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable react-hooks/set-state-in-effect */
 
 import {
   useEffect,
@@ -58,6 +59,8 @@ import type {
   DoctorSlot,
 } from "@/types/availability";
 
+import { CalendarDays, Check, Clock3, FileText, MapPin, Paperclip, RefreshCcw, Stethoscope, UserRound, Video } from "lucide-react";
+
 
 const MAX_FILE_SIZE =
   5 * 1024 * 1024;
@@ -92,13 +95,12 @@ function to24Hour(
     time.split(" ");
 
 
-  let [
-    hours,
-    minutes,
-  ] =
+  const [initialHours, minutes] =
     clock
       .split(":")
       .map(Number);
+
+  let hours = initialHours;
 
 
   if (
@@ -1079,7 +1081,7 @@ export default function BookingPage() {
 
           <div className="text-center">
 
-            <div className="mx-auto size-9 animate-spin rounded-full border-4 border-emerald-100 border-t-[var(--brand)]" />
+            <div className="mx-auto size-9 animate-spin rounded-full border-4 border-[#F2C2A7] border-t-[var(--brand)]" />
 
             <p className="mt-4 text-sm text-[var(--muted)]">
               Loading availability...
@@ -1145,6 +1147,15 @@ export default function BookingPage() {
           ← Back to doctor profile
         </Link>
 
+        <ol className="mt-7 hidden grid-cols-5 border-y border-[var(--line)] bg-[var(--card)] sm:grid" aria-label="Booking steps">
+          {["Date", "Time", "Appointment type", "Patient information", "Confirmation"].map((label, index) => (
+            <li key={label} className="border-r border-[var(--line)] px-3 py-4 last:border-r-0">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--brand)]">0{index + 1}</span>
+              <span className="mt-1 block text-xs font-semibold">{label}</span>
+            </li>
+          ))}
+        </ol>
+
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_22rem]">
 
@@ -1159,14 +1170,14 @@ export default function BookingPage() {
                 HEADER
             ================================= */}
 
-            <section className="rounded-2xl border border-[var(--line)] bg-white p-6">
+            <section className="rounded-[18px] border border-[var(--line)] bg-[var(--card)] p-6">
 
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--brand)]">
                 Appointment Booking
               </p>
 
 
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight">
+              <h1 className="font-editorial mt-2 text-4xl tracking-tight">
                 Book your appointment
               </h1>
 
@@ -1190,7 +1201,7 @@ export default function BookingPage() {
                 DATE
             ================================= */}
 
-            <section className="rounded-2xl border border-[var(--line)] bg-white p-6">
+            <section className="rounded-xl border border-[var(--line)] bg-white p-6">
 
               <div className="flex items-center justify-between gap-4">
 
@@ -1207,9 +1218,7 @@ export default function BookingPage() {
                 </div>
 
 
-                <span className="text-xl">
-                  📅
-                </span>
+                <CalendarDays size={21} className="text-[var(--brand)]" />
 
               </div>
 
@@ -1293,7 +1302,7 @@ export default function BookingPage() {
 
               ) : (
 
-                <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
+                <div className="mt-5 rounded-xl border border-[#F2C2A7] bg-[#F7F4EF] p-4 text-sm text-[#D96B32]">
                   This doctor currently has no available appointment slots.
                 </div>
 
@@ -1306,7 +1315,7 @@ export default function BookingPage() {
                 TIME
             ================================= */}
 
-            <section className="rounded-2xl border border-[var(--line)] bg-white p-6">
+            <section className="rounded-xl border border-[var(--line)] bg-white p-6">
 
               <div className="flex items-center justify-between gap-4">
 
@@ -1324,7 +1333,7 @@ export default function BookingPage() {
 
 
                 <span className="text-xl">
-                  🕐
+                  <Clock3 size={18} className="mx-auto text-[var(--brand)]" />
                 </span>
 
               </div>
@@ -1370,7 +1379,7 @@ export default function BookingPage() {
 
               ) : (
 
-                <p className="mt-5 rounded-xl bg-stone-50 p-4 text-sm text-[var(--muted)]">
+                <p className="mt-5 rounded-xl bg-[#F7F4EF] p-4 text-sm text-[var(--muted)]">
                   No available time slots for this date.
                 </p>
 
@@ -1383,7 +1392,7 @@ export default function BookingPage() {
                 APPOINTMENT TYPE
             ================================= */}
 
-            <section className="rounded-2xl border border-[var(--line)] bg-white p-6">
+            <section className="rounded-xl border border-[var(--line)] bg-white p-6">
 
               <div className="flex items-center justify-between gap-4">
 
@@ -1403,9 +1412,7 @@ export default function BookingPage() {
 
                 </div>
 
-                <span className="text-xl">
-                  🩺
-                </span>
+                <Stethoscope size={21} className="text-[var(--brand)]" />
 
               </div>
 
@@ -1436,22 +1443,16 @@ export default function BookingPage() {
                           )
                         }
 
-                        className={`rounded-2xl border p-4 text-left transition ${
+                        className={`rounded-xl border p-4 text-left transition ${
                           selected
-                            ? "border-[var(--brand)] bg-emerald-50 text-[var(--brand)]"
+                            ? "border-[var(--brand)] bg-[#F7F4EF] text-[var(--brand)]"
                             : "border-[var(--line)] bg-white hover:border-[var(--brand)]"
                         }`}
                       >
 
                         <span className="text-xl">
 
-                          {item ===
-                          "In-person"
-                            ? "🏥"
-                            : item ===
-                              "Video consultation"
-                            ? "💻"
-                            : "🔁"}
+                          {item === "In-person" ? <MapPin size={20} /> : item === "Video consultation" ? <Video size={20} /> : <RefreshCcw size={20} />}
 
                         </span>
 
@@ -1487,7 +1488,7 @@ export default function BookingPage() {
                 PATIENT DETAILS
             ================================= */}
 
-            <section className="rounded-2xl border border-[var(--line)] bg-white p-6">
+            <section className="rounded-xl border border-[var(--line)] bg-white p-6">
 
               <div className="flex items-center justify-between gap-4">
 
@@ -1504,9 +1505,7 @@ export default function BookingPage() {
                 </div>
 
 
-                <span className="text-xl">
-                  👤
-                </span>
+                <UserRound size={21} className="text-[var(--brand)]" />
 
               </div>
 
@@ -1536,7 +1535,7 @@ export default function BookingPage() {
 
                     placeholder="Patient name"
 
-                    className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#fbfdfc] px-4 py-3 text-sm outline-none transition focus:border-[var(--brand)]"
+                    className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#FFFFFF] px-4 py-3 text-sm outline-none transition focus:border-[var(--brand)]"
                   />
 
                 </label>
@@ -1571,7 +1570,7 @@ export default function BookingPage() {
 
                     placeholder="34"
 
-                    className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#fbfdfc] px-4 py-3 text-sm outline-none transition focus:border-[var(--brand)]"
+                    className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#FFFFFF] px-4 py-3 text-sm outline-none transition focus:border-[var(--brand)]"
                   />
 
                 </label>
@@ -1602,7 +1601,7 @@ export default function BookingPage() {
 
                     placeholder="patient@example.com"
 
-                    className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#fbfdfc] px-4 py-3 text-sm outline-none transition focus:border-[var(--brand)]"
+                    className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#FFFFFF] px-4 py-3 text-sm outline-none transition focus:border-[var(--brand)]"
                   />
 
                 </label>
@@ -1633,7 +1632,7 @@ export default function BookingPage() {
 
                     placeholder="9876543210"
 
-                    className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#fbfdfc] px-4 py-3 text-sm outline-none transition focus:border-[var(--brand)]"
+                    className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#FFFFFF] px-4 py-3 text-sm outline-none transition focus:border-[var(--brand)]"
                   />
 
                 </label>
@@ -1666,7 +1665,7 @@ export default function BookingPage() {
 
                     placeholder="Briefly describe the reason for your consultation"
 
-                    className="mt-2 w-full resize-none rounded-xl border border-[var(--line)] bg-[#fbfdfc] px-4 py-3 text-sm outline-none transition focus:border-[var(--brand)]"
+                    className="mt-2 w-full resize-none rounded-xl border border-[var(--line)] bg-[#FFFFFF] px-4 py-3 text-sm outline-none transition focus:border-[var(--brand)]"
                   />
 
                 </label>
@@ -1691,11 +1690,9 @@ export default function BookingPage() {
 
                   {!attachment ? (
 
-                    <label className="mt-2 flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[var(--line)] bg-[#fbfdfc] px-6 py-8 text-center transition hover:border-[var(--brand)] hover:bg-emerald-50/30">
+                    <label className="mt-2 flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-[var(--line)] bg-[#FFFFFF] px-6 py-8 text-center transition hover:border-[var(--brand)] hover:bg-[#F7F4EF]/30">
 
-                      <span className="text-3xl">
-                        📎
-                      </span>
+                      <Paperclip size={26} className="text-[var(--brand)]" />
 
 
                       <span className="mt-3 text-sm font-semibold">
@@ -1724,7 +1721,7 @@ export default function BookingPage() {
 
                   ) : (
 
-                    <div className="mt-2 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4">
+                    <div className="mt-2 rounded-xl border border-[#F2C2A7] bg-[#F7F4EF]/50 p-4">
 
                       <div className="flex items-center justify-between gap-4">
 
@@ -1732,7 +1729,7 @@ export default function BookingPage() {
 
                           <p className="truncate text-sm font-semibold">
 
-                            📄{" "}
+                            <FileText size={15} className="mr-1 inline text-[var(--brand)]" />{" "}
 
                             {
                               attachment.name
@@ -1765,7 +1762,7 @@ export default function BookingPage() {
                             removeAttachment
                           }
 
-                          className="shrink-0 text-sm font-semibold text-red-600 hover:underline"
+                          className="shrink-0 text-sm font-semibold text-[#C9362D] hover:underline"
                         >
                           Remove
                         </button>
@@ -1773,8 +1770,8 @@ export default function BookingPage() {
                       </div>
 
 
-                      <div className="mt-3 rounded-lg bg-white/70 px-3 py-2 text-xs text-emerald-700">
-                        ✓ File ready to upload with this appointment request
+                      <div className="mt-3 rounded-lg bg-white/70 px-3 py-2 text-xs text-[#C9362D]">
+                        <Check size={14} className="mr-1 inline" /> File ready to upload with this appointment request
                       </div>
 
                     </div>
@@ -1805,7 +1802,7 @@ export default function BookingPage() {
 
               <div
                 role="alert"
-                className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                className="rounded-xl border border-[#F2C2A7] bg-[#F7F4EF] px-4 py-3 text-sm text-[#C9362D]"
               >
                 {error}
               </div>

@@ -8,19 +8,19 @@ const styles:
     string
   > = {
   pending:
-    "bg-amber-50 text-amber-700 ring-amber-200",
+    "bg-[#F7F4EF] text-[#D96B32] ring-[#F2C2A7]",
 
   confirmed:
-    "bg-emerald-50 text-emerald-700 ring-emerald-200",
+    "bg-[#F7F4EF] text-[#C9362D] ring-[#F2C2A7]",
 
   completed:
-    "bg-blue-50 text-blue-700 ring-blue-200",
+    "bg-[#F7F4EF] text-[#D96B32] ring-[#F2C2A7]",
 
   cancelled:
-    "bg-red-50 text-red-700 ring-red-200",
+    "bg-[#F7F4EF] text-[#C9362D] ring-[#F2C2A7]",
 
   missed:
-    "bg-stone-100 text-stone-600 ring-stone-200",
+    "bg-[#F7F4EF] text-[#746E68] ring-[#DDD7D0]",
 };
 
 export default function StatusBadge({

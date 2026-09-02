@@ -7,12 +7,12 @@ import {
   formatAppointmentTime,
 } from "@/lib/appointment-utils";
 
-const BRAND = [23, 107, 85] as const;
-const BRAND_DEEP = [18, 61, 52] as const;
-const INK = [23, 53, 45] as const;
-const MUTED = [105, 125, 117] as const;
-const LINE = [220, 231, 226] as const;
-const SOFT = [245, 249, 247] as const;
+const BRAND = [229, 72, 59] as const;
+const BRAND_DEEP = [18, 16, 15] as const;
+const INK = [18, 16, 15] as const;
+const MUTED = [116, 110, 104] as const;
+const LINE = [221, 215, 208] as const;
+const SOFT = [247, 244, 239] as const;
 
 export function createPrescriptionPdf(
   booking: Booking,
@@ -37,7 +37,7 @@ export function createPrescriptionPdf(
   const header = (continuation = false) => {
     pdf.setFillColor(...BRAND_DEEP);
     pdf.rect(0, 0, 210, continuation ? 25 : 39, "F");
-    pdf.setFillColor(185, 239, 207);
+    pdf.setFillColor(242, 194, 167);
     pdf.roundedRect(left, 9, 13, 13, 3, 3, "F");
     pdf.setTextColor(...BRAND_DEEP);
     pdf.setFont("helvetica", "bold");
@@ -48,7 +48,7 @@ export function createPrescriptionPdf(
     pdf.text("Schedula", left + 18, 15);
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(8);
-    pdf.setTextColor(209, 233, 224);
+    pdf.setTextColor(170, 163, 157);
     pdf.text("Care, clearly documented.", left + 18, 21);
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(8.5);
@@ -57,7 +57,7 @@ export function createPrescriptionPdf(
     if (!continuation) {
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(7.5);
-      pdf.setTextColor(209, 233, 224);
+      pdf.setTextColor(170, 163, 157);
       pdf.text(`Issued ${new Intl.DateTimeFormat("en-IN", { dateStyle: "medium" }).format(new Date(prescription.updatedAt ?? prescription.createdAt))}`, right, 21, { align: "right" });
     }
     y = continuation ? 34 : 49;
@@ -118,7 +118,7 @@ export function createPrescriptionPdf(
   const diagnosisLines = pdf.splitTextToSize(prescription.diagnosis || "No diagnosis recorded.", width - 12);
   const diagnosisHeight = Math.max(17, diagnosisLines.length * 5 + 9);
   ensure(diagnosisHeight);
-  pdf.setFillColor(232, 246, 239);
+  pdf.setFillColor(247, 244, 239);
   pdf.roundedRect(left, y, width, diagnosisHeight, 3, 3, "F");
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(10);
@@ -165,8 +165,8 @@ export function createPrescriptionPdf(
   const noteLines = pdf.splitTextToSize(prescription.notes || "No additional instructions.", width - 12);
   const noteHeight = Math.max(22, noteLines.length * 4.5 + 11);
   ensure(noteHeight + 5);
-  pdf.setFillColor(255, 250, 235);
-  pdf.setDrawColor(238, 218, 159);
+  pdf.setFillColor(247, 244, 239);
+  pdf.setDrawColor(217, 107, 50);
   pdf.roundedRect(left, y, width, noteHeight, 3, 3, "FD");
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(9);

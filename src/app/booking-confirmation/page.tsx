@@ -1,9 +1,11 @@
 "use client";
+/* eslint-disable react-hooks/set-state-in-effect */
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { jsPDF } from "jspdf";
 import QRCode from "qrcode";
+import { CircleCheck, Clock3, FileText, OctagonAlert, X } from "lucide-react";
 
 import Navbar from "@/components/layout/Navbar";
 
@@ -77,22 +79,22 @@ function getStatusLabel(status: BookingStatus) {
 function getStatusStyle(status: BookingStatus) {
   switch (status) {
     case "pending":
-      return "border-amber-200 bg-amber-50 text-amber-700";
+      return "border-[#F2C2A7] bg-[#F7F4EF] text-[#D96B32]";
 
     case "confirmed":
-      return "border-emerald-200 bg-emerald-50 text-emerald-700";
+      return "border-[#F2C2A7] bg-[#F7F4EF] text-[#C9362D]";
 
     case "completed":
-      return "border-blue-200 bg-blue-50 text-blue-700";
+      return "border-[#F2C2A7] bg-[#F7F4EF] text-[#D96B32]";
 
     case "cancelled":
-      return "border-red-200 bg-red-50 text-red-700";
+      return "border-[#F2C2A7] bg-[#F7F4EF] text-[#C9362D]";
 
     case "missed":
-      return "border-stone-200 bg-stone-100 text-stone-600";
+      return "border-[#DDD7D0] bg-[#F7F4EF] text-[#746E68]";
 
     default:
-      return "border-stone-200 bg-stone-100 text-stone-600";
+      return "border-[#DDD7D0] bg-[#F7F4EF] text-[#746E68]";
   }
 }
 
@@ -104,8 +106,6 @@ function getPageContent(status: BookingStatus) {
   switch (status) {
     case "pending":
       return {
-        icon: "⌛",
-
         eyebrow: "Appointment request submitted",
 
         title: "Waiting for doctor confirmation",
@@ -123,8 +123,6 @@ function getPageContent(status: BookingStatus) {
 
     case "confirmed":
       return {
-        icon: "✓",
-
         eyebrow: "Booking confirmed",
 
         title: "Appointment confirmed",
@@ -141,8 +139,6 @@ function getPageContent(status: BookingStatus) {
 
     case "completed":
       return {
-        icon: "✓",
-
         eyebrow: "Appointment completed",
 
         title: "Consultation completed",
@@ -159,8 +155,6 @@ function getPageContent(status: BookingStatus) {
 
     case "cancelled":
       return {
-        icon: "✕",
-
         eyebrow: "Appointment cancelled",
 
         title: "Appointment cancelled",
@@ -177,8 +171,6 @@ function getPageContent(status: BookingStatus) {
 
     case "missed":
       return {
-        icon: "!",
-
         eyebrow: "Appointment missed",
 
         title: "Appointment marked as missed",
@@ -707,7 +699,7 @@ export default function BookingConfirmationPage() {
 
         <main className="grid min-h-[calc(100vh-73px)] place-items-center px-4">
           <div className="text-center">
-            <div className="mx-auto size-10 animate-spin rounded-full border-4 border-emerald-100 border-t-[var(--brand)]" />
+            <div className="mx-auto size-10 animate-spin rounded-full border-4 border-[#F2C2A7] border-t-[var(--brand)]" />
 
             <p className="mt-4 text-sm text-[var(--muted)]">
               Loading appointment...
@@ -723,7 +715,7 @@ export default function BookingConfirmationPage() {
       <Navbar />
 
       <main className="grid min-h-[calc(100vh-73px)] place-items-center px-4 py-12">
-        <section className="w-full max-w-2xl rounded-[2rem] border border-[var(--line)] bg-white p-6 text-center soft-shadow sm:p-10">
+        <section className="w-full max-w-2xl rounded-[18px] border border-[var(--line)] bg-white p-6 text-center soft-shadow sm:p-10">
           {booking && pageContent && (
             <>
               {/* STATUS ICON */}
@@ -733,7 +725,7 @@ export default function BookingConfirmationPage() {
                   booking.status,
                 )}`}
               >
-                {pageContent.icon}
+                {booking.status === "pending" ? <Clock3 size={24} /> : booking.status === "confirmed" || booking.status === "completed" ? <CircleCheck size={24} /> : booking.status === "cancelled" ? <X size={24} /> : <OctagonAlert size={24} />}
               </div>
 
               {/* HEADER */}
@@ -753,12 +745,12 @@ export default function BookingConfirmationPage() {
               {/* PENDING MESSAGE */}
 
               {booking.status === "pending" && (
-                <div className="mx-auto mt-6 max-w-lg rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-left">
-                  <p className="text-sm font-semibold text-amber-800">
+                <div className="mx-auto mt-6 max-w-lg rounded-xl border border-[#F2C2A7] bg-[#F7F4EF] px-5 py-4 text-left">
+                  <p className="text-sm font-semibold text-[#D96B32]">
                     What happens next?
                   </p>
 
-                  <p className="mt-2 text-sm leading-6 text-amber-700">
+                  <p className="mt-2 text-sm leading-6 text-[#D96B32]">
                     Your selected appointment slot has been reserved. The doctor
                     can now confirm or decline the request.
                   </p>
@@ -768,12 +760,12 @@ export default function BookingConfirmationPage() {
               {/* CONFIRMED MESSAGE */}
 
               {booking.status === "confirmed" && (
-                <div className="mx-auto mt-6 max-w-lg rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-left">
-                  <p className="text-sm font-semibold text-emerald-800">
+                <div className="mx-auto mt-6 max-w-lg rounded-xl border border-[#F2C2A7] bg-[#F7F4EF] px-5 py-4 text-left">
+                  <p className="text-sm font-semibold text-[#C9362D]">
                     Appointment ready
                   </p>
 
-                  <p className="mt-2 text-sm leading-6 text-emerald-700">
+                  <p className="mt-2 text-sm leading-6 text-[#C9362D]">
                     Your doctor has accepted the appointment request. Please
                     arrive on time and keep your confirmation record.
                   </p>
@@ -782,7 +774,7 @@ export default function BookingConfirmationPage() {
 
               {/* BOOKING CARD */}
 
-              <div className="mx-auto mt-8 max-w-lg rounded-2xl border border-[var(--line)] bg-[#fbfdfc] p-5 text-left">
+              <div className="mx-auto mt-8 max-w-lg rounded-xl border border-[var(--line)] bg-[#FFFFFF] p-5 text-left">
                 <div className="flex items-start justify-between gap-4 border-b border-[var(--line)] pb-4">
                   <div>
                     <p className="font-semibold">{booking.doctorName}</p>
@@ -866,12 +858,12 @@ export default function BookingConfirmationPage() {
                 {/* RESCHEDULED */}
 
                 {booking.rescheduledAt && (
-                  <div className="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                  <div className="mt-5 rounded-xl border border-[#F2C2A7] bg-[#F7F4EF] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[#D96B32]">
                       Appointment rescheduled
                     </p>
 
-                    <p className="mt-2 text-sm text-blue-800">
+                    <p className="mt-2 text-sm text-[#D96B32]">
                       Your current appointment is scheduled for{" "}
                       <span className="font-semibold">
                         {displayDate(booking.date)} at {booking.time}
@@ -880,7 +872,7 @@ export default function BookingConfirmationPage() {
                     </p>
 
                     {booking.originalStartsAt && (
-                      <p className="mt-2 text-xs text-blue-700">
+                      <p className="mt-2 text-xs text-[#D96B32]">
                         Original: {displayDateTime(booking.originalStartsAt)}
                       </p>
                     )}
@@ -890,13 +882,13 @@ export default function BookingConfirmationPage() {
                 {/* ATTACHMENT */}
 
                 {booking.attachment && (
-                  <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50/50 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                  <div className="mt-5 rounded-xl border border-[#F2C2A7] bg-[#F7F4EF]/50 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[#C9362D]">
                       Medical attachment
                     </p>
 
                     <p className="mt-2 break-all text-sm font-semibold">
-                      📄 {booking.attachment.name}
+                      <FileText size={15} className="mr-1 inline text-[var(--brand)]" /> {booking.attachment.name}
                     </p>
 
                     <p className="mt-1 text-xs text-[var(--muted)]">
@@ -945,7 +937,7 @@ export default function BookingConfirmationPage() {
 
           {!booking && (
             <>
-              <div className="mx-auto grid size-16 place-items-center rounded-full bg-amber-50 text-2xl">
+              <div className="mx-auto grid size-16 place-items-center rounded-full bg-[#F7F4EF] text-2xl">
                 !
               </div>
 

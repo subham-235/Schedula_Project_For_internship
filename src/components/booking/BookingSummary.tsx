@@ -6,7 +6,7 @@ export default function BookingSummary({ doctor, date, time }: { doctor: Doctor;
     : "Select a date";
 
   return (
-    <aside className="h-fit rounded-2xl border border-[var(--line)] bg-white p-6 soft-shadow lg:sticky lg:top-24">
+    <aside className="h-fit rounded-xl border border-[var(--line)] bg-white p-6 soft-shadow lg:sticky lg:top-24">
       <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">Appointment summary</p>
       <div className="mt-5 flex items-center gap-3">
         <span className="grid size-12 place-items-center rounded-xl bg-[var(--brand-soft)] text-sm font-semibold text-[var(--brand)]">{doctor.initials}</span>

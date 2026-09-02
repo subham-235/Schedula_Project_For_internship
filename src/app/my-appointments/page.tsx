@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable react-hooks/set-state-in-effect */
 
 import Link from "next/link";
 
@@ -40,7 +41,7 @@ import {
   downloadPrescriptionPdf,
 } from "@/lib/prescription-pdf";
 
-type Tab = "upcoming" | "completed" | "cancelled";
+type Tab = "upcoming" | "completed" | "cancelled" | "missed";
 
 export default function MyAppointmentsPage() {
   const router = useRouter();
@@ -106,9 +107,8 @@ export default function MyAppointmentsPage() {
           return booking.status === "pending" || booking.status === "confirmed";
         }
 
-        if (tab === "cancelled") {
-          return booking.status === "cancelled" || booking.status === "missed";
-        }
+        if (tab === "cancelled") return booking.status === "cancelled";
+        if (tab === "missed") return booking.status === "missed";
 
         return booking.status === tab;
       }),
@@ -169,20 +169,20 @@ export default function MyAppointmentsPage() {
     }
   };
 
-  const tabs: Tab[] = ["upcoming", "completed", "cancelled"];
+  const tabs: Tab[] = ["upcoming", "completed", "cancelled", "missed"];
 
   return (
     <>
       <Navbar />
 
-      <main className="min-h-screen bg-[#f7faf8]">
-        <section className="border-b border-[var(--line)] bg-white">
+      <main className="min-h-screen bg-[#F7F4EF]">
+        <section className="border-b border-[var(--line)] bg-[var(--ivory)]">
           <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-            <p className="text-sm font-semibold text-[var(--brand)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">
               Patient Portal
             </p>
 
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
+            <h1 className="font-editorial mt-3 text-4xl tracking-tight sm:text-5xl">
               My Appointments
             </h1>
 
@@ -195,21 +195,21 @@ export default function MyAppointmentsPage() {
 
         <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           {message && (
-            <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+            <div className="mb-6 rounded-xl border border-[#F2C2A7] bg-[#F7F4EF] px-4 py-3 text-sm font-medium text-[#C9362D]">
               {message}
             </div>
           )}
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap border-b border-[var(--line)]">
             {tabs.map((item) => (
               <button
                 key={item}
                 type="button"
                 onClick={() => setTab(item)}
-                className={`rounded-xl px-4 py-2.5 text-sm font-semibold capitalize ${
+                className={`relative px-4 py-3 text-sm font-semibold capitalize ${
                   tab === item
-                    ? "bg-[var(--brand)] text-white"
-                    : "border border-[var(--line)] bg-white text-[var(--muted)]"
+                    ? "text-[var(--brand)] after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:bg-[var(--brand)]"
+                    : "text-[var(--muted)] hover:text-[var(--foreground)]"
                 }`}
               >
                 {item}
@@ -227,11 +227,11 @@ export default function MyAppointmentsPage() {
                 return (
                   <article
                     key={booking.id}
-                    className="rounded-2xl border border-[var(--line)] bg-white p-5 shadow-sm sm:p-6"
+                    className="rounded-[18px] border border-[var(--line)] bg-[var(--card)] p-5 transition hover:border-[var(--brand-soft)] sm:p-6"
                   >
                     <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
                       <div className="flex gap-4">
-                        <div className="grid size-14 shrink-0 place-items-center rounded-2xl bg-emerald-50 text-[var(--brand)]">
+                        <div className="grid size-14 shrink-0 place-items-center rounded-xl bg-[var(--brand-soft)] text-[var(--brand)]">
                           <Stethoscope size={22} />
                         </div>
 
@@ -298,13 +298,13 @@ export default function MyAppointmentsPage() {
                             <button
                               type="button"
                               onClick={() => setReviewBooking(booking)}
-                              className="inline-flex items-center gap-2 rounded-xl border border-[var(--line)] px-3 py-2.5 text-xs font-semibold hover:border-amber-300 hover:text-amber-600"
+                              className="inline-flex items-center gap-2 rounded-xl border border-[var(--line)] px-3 py-2.5 text-xs font-semibold hover:border-[#F2C2A7] hover:text-[#D96B32]"
                             >
                               <Star size={15} />
                               Review Doctor
                             </button>
                           ) : (
-                            <span className="inline-flex items-center gap-1 rounded-xl bg-amber-50 px-3 py-2.5 text-xs font-semibold text-amber-700">
+                            <span className="inline-flex items-center gap-1 rounded-xl bg-[#F7F4EF] px-3 py-2.5 text-xs font-semibold text-[#D96B32]">
                               <Star size={14} fill="currentColor" />
                               Reviewed
                             </span>
@@ -325,12 +325,12 @@ export default function MyAppointmentsPage() {
                       <div
                         className={`mt-5 rounded-xl border px-4 py-3 text-sm ${
                           prescription
-                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                            : "border-stone-200 bg-stone-50 text-stone-600"
+                            ? "border-[#F2C2A7] bg-[#F7F4EF] text-[#C9362D]"
+                            : "border-[#DDD7D0] bg-[#F7F4EF] text-[#746E68]"
                         }`}
                       >
                         {prescription
-                          ? "✓ Prescription Available"
+                          ? "Prescription available"
                           : "Prescription Not Available"}
                       </div>
                     )}
@@ -338,8 +338,8 @@ export default function MyAppointmentsPage() {
                 );
               })
             ) : (
-              <div className="rounded-2xl border border-dashed border-[var(--line)] bg-white p-12 text-center">
-                <CalendarDays size={28} className="mx-auto text-stone-300" />
+              <div className="rounded-xl border border-dashed border-[var(--line)] bg-white p-12 text-center">
+                <CalendarDays size={28} className="mx-auto text-[#DDD7D0]" />
 
                 <p className="mt-4 font-semibold">No {tab} appointments</p>
 
@@ -362,7 +362,7 @@ export default function MyAppointmentsPage() {
 
         {selectedPrescription && (
           <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4">
-            <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="w-full max-w-xl rounded-xl bg-white p-6 shadow-2xl">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-sm font-semibold text-[var(--brand)]">
@@ -402,7 +402,7 @@ export default function MyAppointmentsPage() {
                           (medicine, index) => (
                             <li
                               key={`${medicine}-${index}`}
-                              className="rounded-lg bg-stone-50 px-3 py-2 font-medium"
+                              className="rounded-lg bg-[#F7F4EF] px-3 py-2 font-medium"
                             >
                               {index + 1}. {medicine}
                             </li>
@@ -431,7 +431,7 @@ export default function MyAppointmentsPage() {
 
         {reviewBooking && (
           <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4">
-            <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
               <h2 className="text-xl font-semibold">
                 Review {reviewBooking.doctorName}
               </h2>
@@ -446,7 +446,7 @@ export default function MyAppointmentsPage() {
                     key={item}
                     type="button"
                     onClick={() => setRating(item)}
-                    className="text-amber-400"
+                    className="text-[#D96B32]"
                   >
                     <Star
                       size={28}

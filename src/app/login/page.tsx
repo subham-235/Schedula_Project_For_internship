@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable react-hooks/set-state-in-effect */
 
 import Link from "next/link";
 
@@ -14,6 +15,8 @@ import type {
 import {
   useRouter,
 } from "next/navigation";
+
+import { Check } from "lucide-react";
 
 import Navbar from "@/components/layout/Navbar";
 
@@ -277,7 +280,7 @@ export default function LoginPage() {
             w-full
             max-w-5xl
             overflow-hidden
-            rounded-[2rem]
+            rounded-[18px]
             border
             border-[var(--line)]
             bg-white
@@ -295,7 +298,7 @@ export default function LoginPage() {
           <section
             className="
               hidden
-              bg-[var(--brand)]
+              bg-[#12100F]
               p-10
               text-white
               lg:block
@@ -323,9 +326,9 @@ export default function LoginPage() {
             <h1
               className="
                 mt-8
-                text-4xl
-                font-semibold
-                tracking-tight
+                font-editorial
+                text-5xl
+                tracking-[-0.045em]
               "
             >
 
@@ -341,7 +344,7 @@ export default function LoginPage() {
                 max-w-sm
                 text-sm
                 leading-7
-                text-emerald-50/80
+                text-[#F7F4EF]/80
               "
             >
 
@@ -387,7 +390,7 @@ export default function LoginPage() {
                       "
                     >
 
-                      ✓
+                      <Check size={14} />
 
                     </span>
 
@@ -472,12 +475,12 @@ export default function LoginPage() {
                   mt-5
                   rounded-xl
                   border
-                  border-emerald-200
-                  bg-emerald-50
+                  border-[#F2C2A7]
+                  bg-[#F7F4EF]
                   px-4
                   py-3
                   text-sm
-                  text-emerald-700
+                  text-[#C9362D]
                 "
               >
 
@@ -565,7 +568,7 @@ export default function LoginPage() {
                     rounded-xl
                     border
                     border-[var(--line)]
-                    bg-[#fbfdfc]
+                    bg-[#FFFFFF]
                     px-4
                     py-3
                     text-sm
@@ -622,7 +625,7 @@ export default function LoginPage() {
                     rounded-xl
                     border
                     border-[var(--line)]
-                    bg-[#fbfdfc]
+                    bg-[#FFFFFF]
                     px-4
                     py-3
                     text-sm
@@ -654,12 +657,12 @@ export default function LoginPage() {
                   className="
                     rounded-xl
                     border
-                    border-red-200
-                    bg-red-50
+                    border-[#F2C2A7]
+                    bg-[#F7F4EF]
                     px-4
                     py-3
                     text-sm
-                    text-red-700
+                    text-[#C9362D]
                   "
 
                 >

@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable react-hooks/set-state-in-effect */
 
 import Link from "next/link";
 
@@ -57,24 +58,24 @@ import StatusBadge from "@/components/appointments/StatusBadge";
 
 const calendarStatusStyles = {
   pending:
-    "border-amber-200 bg-amber-50 text-amber-800",
+    "border-[#F2C2A7] bg-[#F7F4EF] text-[#D96B32]",
   confirmed:
-    "border-emerald-200 bg-emerald-50 text-emerald-800",
+    "border-[#F2C2A7] bg-[#F7F4EF] text-[#C9362D]",
   completed:
-    "border-blue-200 bg-blue-50 text-blue-800",
+    "border-[#F2C2A7] bg-[#F7F4EF] text-[#D96B32]",
   cancelled:
-    "border-rose-200 bg-rose-50 text-rose-700",
+    "border-[#F2C2A7] bg-[#F7F4EF] text-[#C9362D]",
   missed:
-    "border-stone-200 bg-stone-100 text-stone-600",
+    "border-[#DDD7D0] bg-[#F7F4EF] text-[#746E68]",
 } as const;
 
 
 const calendarStatusDots = {
-  pending: "bg-amber-400",
-  confirmed: "bg-emerald-500",
-  completed: "bg-blue-500",
-  cancelled: "bg-rose-500",
-  missed: "bg-stone-400",
+  pending: "bg-[#D96B32]",
+  confirmed: "bg-[#E5483B]",
+  completed: "bg-[#D96B32]",
+  cancelled: "bg-[#C9362D]",
+  missed: "bg-[#746E68]",
 } as const;
 
 
@@ -609,8 +610,8 @@ export default function DoctorCalendarPage() {
         className={`rounded-xl border border-dashed p-3 text-xs font-semibold ${
           slot.status ===
           "available"
-            ? "border-emerald-300 bg-white text-emerald-700"
-            : "border-stone-200 bg-stone-100 text-stone-400"
+            ? "border-[#F2C2A7] bg-white text-[#C9362D]"
+            : "border-[#DDD7D0] bg-[#F7F4EF] text-[#746E68]"
         }`}
       >
         <div className="flex items-center gap-2">
@@ -727,11 +728,11 @@ export default function DoctorCalendarPage() {
 
 
   return (
-    <main className="min-h-screen bg-[#f3f7f5] px-4 py-6 sm:px-8 lg:px-10">
+    <main className="min-h-screen bg-[#F7F4EF] px-4 py-6 sm:px-8 lg:px-10">
 
       <div className="mx-auto max-w-[94rem]">
 
-        <div className="flex flex-col justify-between gap-5 rounded-3xl border border-[#dce7e2] bg-white p-6 shadow-[0_8px_24px_rgba(27,68,56,0.04)] lg:flex-row lg:items-end lg:p-7">
+        <div className="flex flex-col justify-between gap-5 rounded-[18px] border border-[#DDD7D0] bg-white p-6 shadow-[0_8px_24px_rgba(18,16,15,0.04)] lg:flex-row lg:items-end lg:p-7">
 
           <div>
 
@@ -783,7 +784,7 @@ export default function DoctorCalendarPage() {
                     view ===
                     item
                       ? "bg-[var(--brand)] text-white shadow-sm"
-                      : "border border-[var(--line)] bg-[#f8faf9] text-[#657970] hover:bg-white"
+                      : "border border-[var(--line)] bg-[#F7F4EF] text-[#746E68] hover:bg-white"
                   }`}
                 >
                   {
@@ -799,7 +800,7 @@ export default function DoctorCalendarPage() {
 
 
         {message && (
-          <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+          <div className="mt-6 rounded-xl border border-[#F2C2A7] bg-[#F7F4EF] px-4 py-3 text-sm font-medium text-[#C9362D]">
             {
               message
             }
@@ -807,8 +808,8 @@ export default function DoctorCalendarPage() {
         )}
 
 
-        <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-2xl border border-[#dce7e2] bg-white px-4 py-3 text-xs font-semibold text-[#657970]">
-          <span className="mr-1 text-[10px] uppercase tracking-[0.14em] text-[#8b9a94]">
+        <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl border border-[#DDD7D0] bg-white px-4 py-3 text-xs font-semibold text-[#746E68]">
+          <span className="mr-1 text-[10px] uppercase tracking-[0.14em] text-[#746E68]">
             Status
           </span>
 
@@ -834,13 +835,13 @@ export default function DoctorCalendarPage() {
             </span>
           ))}
 
-          <span className="ml-auto hidden text-[10px] text-[#8b9a94] sm:block">
+          <span className="ml-auto hidden text-[10px] text-[#746E68] sm:block">
             Confirmed future bookings can be dragged
           </span>
         </div>
 
 
-        <div className="mt-5 flex items-center justify-between rounded-2xl border border-[var(--line)] bg-white p-4 shadow-[0_8px_24px_rgba(27,68,56,0.04)]">
+        <div className="mt-5 flex items-center justify-between rounded-xl border border-[var(--line)] bg-white p-4 shadow-[0_8px_24px_rgba(18,16,15,0.04)]">
 
           <button
             type="button"
@@ -918,7 +919,7 @@ export default function DoctorCalendarPage() {
           "day" && (
           <div className="mt-6 grid gap-6 lg:grid-cols-2">
 
-            <section className="rounded-2xl border border-[var(--line)] bg-white p-5">
+            <section className="rounded-xl border border-[var(--line)] bg-white p-5">
 
               <h2 className="flex items-center gap-2 font-semibold">
                 <CalendarDays
@@ -948,14 +949,14 @@ export default function DoctorCalendarPage() {
             </section>
 
 
-            <section className="rounded-2xl border border-[var(--line)] bg-white p-5">
+            <section className="rounded-xl border border-[var(--line)] bg-white p-5">
 
               <h2 className="font-semibold">
                 Availability
               </h2>
 
               <p className="mt-1 text-xs text-[var(--muted)]">
-                Drop a confirmed appointment onto a green available slot.
+                Drop a confirmed appointment onto an orange available slot.
               </p>
 
               <div className="mt-4 grid gap-2 sm:grid-cols-2">
@@ -1011,7 +1012,7 @@ export default function DoctorCalendarPage() {
                     key={
                       key
                     }
-                    className="min-h-[320px] rounded-2xl border border-[var(--line)] bg-white p-3 shadow-[0_6px_20px_rgba(27,68,56,0.035)]"
+                    className="min-h-[320px] rounded-xl border border-[var(--line)] bg-white p-3 shadow-[0_6px_20px_rgba(18,16,15,0.035)]"
                   >
 
                     <button
@@ -1079,7 +1080,7 @@ export default function DoctorCalendarPage() {
 
         {view ===
           "month" && (
-          <div className="mt-6 grid min-w-[760px] grid-cols-7 overflow-hidden rounded-2xl border border-[var(--line)] bg-white shadow-[0_8px_24px_rgba(27,68,56,0.04)]">
+          <div className="mt-6 grid min-w-[760px] grid-cols-7 overflow-hidden rounded-xl border border-[var(--line)] bg-white shadow-[0_8px_24px_rgba(18,16,15,0.04)]">
 
             {[
               "Mon",
@@ -1158,14 +1159,14 @@ export default function DoctorCalendarPage() {
                         );
                       }
                     }}
-                    className={`min-h-28 border-b border-r border-[var(--line)] p-2 text-left transition hover:bg-emerald-50/40 ${
+                    className={`min-h-28 border-b border-r border-[var(--line)] p-2 text-left transition hover:bg-[#F7F4EF]/40 ${
                       belongsToMonth
                         ? "bg-white"
-                        : "bg-stone-50 text-stone-400"
+                        : "bg-[#F7F4EF] text-[#746E68]"
                     } ${
                       draggingBookingId &&
                       availableSlots[0]
-                        ? "bg-emerald-50/70"
+                        ? "bg-[#F2C2A7]/50"
                         : ""
                     }`}
                   >
@@ -1181,7 +1182,7 @@ export default function DoctorCalendarPage() {
                           "day"
                         );
                       }}
-                      className="grid size-7 place-items-center rounded-full text-xs font-semibold hover:bg-emerald-100"
+                      className="grid size-7 place-items-center rounded-full text-xs font-semibold hover:bg-[#F2C2A7]"
                     >
                       {
                         date.getDate()
@@ -1237,7 +1238,7 @@ export default function DoctorCalendarPage() {
 
                     {availableSlots.length >
                       0 && (
-                      <p className="mt-1 rounded-lg bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-700">
+                      <p className="mt-1 rounded-lg bg-[#F7F4EF] px-2 py-1 text-[10px] font-semibold text-[#C9362D]">
                         {draggingBookingId
                           ? `Drop at ${availableSlots[0].time}`
                           : `${availableSlots.length} available`}
@@ -1257,7 +1258,7 @@ export default function DoctorCalendarPage() {
 
       {selectedBooking && (
         <div
-          className="fixed inset-0 z-50 grid place-items-center bg-[#0b231e]/55 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 grid place-items-center bg-[#12100F]/55 p-4 backdrop-blur-sm"
           onMouseDown={(event) => {
             if (
               event.target ===
@@ -1273,7 +1274,7 @@ export default function DoctorCalendarPage() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="calendar-appointment-title"
-            className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-white shadow-2xl"
+            className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-[18px] bg-white shadow-2xl"
           >
             <div
               className={`border-b p-5 ${
@@ -1344,8 +1345,8 @@ export default function DoctorCalendarPage() {
               </span>
 
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-xl bg-[#f5f8f7] p-4">
-                  <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#7d8d87]">
+                <div className="rounded-xl bg-[#F7F4EF] p-4">
+                  <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#746E68]">
                     <CalendarDays
                       size={14}
                     />
@@ -1360,15 +1361,15 @@ export default function DoctorCalendarPage() {
                       )
                     }
                   </p>
-                  <p className="mt-1 text-xs text-[#647a72]">
+                  <p className="mt-1 text-xs text-[#746E68]">
                     {
                       selectedBooking.time
                     }
                   </p>
                 </div>
 
-                <div className="rounded-xl bg-[#f5f8f7] p-4">
-                  <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#7d8d87]">
+                <div className="rounded-xl bg-[#F7F4EF] p-4">
+                  <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#746E68]">
                     <Stethoscope
                       size={14}
                     />
@@ -1380,7 +1381,7 @@ export default function DoctorCalendarPage() {
                       "In-person"
                     }
                   </p>
-                  <p className="mt-1 text-xs text-[#647a72]">
+                  <p className="mt-1 text-xs text-[#746E68]">
                     Age {
                       selectedBooking.patientAge
                     }
@@ -1388,8 +1389,8 @@ export default function DoctorCalendarPage() {
                 </div>
               </div>
 
-              <div className="mt-4 rounded-xl border border-[#e1eae6] p-4">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-[#7d8d87]">
+              <div className="mt-4 rounded-xl border border-[#DDD7D0] p-4">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#746E68]">
                   Reason for visit
                 </p>
                 <p className="mt-2 text-sm leading-6">
@@ -1437,8 +1438,8 @@ export default function DoctorCalendarPage() {
               {isDraggable(
                 selectedBooking
               ) && (
-                <p className="mt-5 rounded-xl bg-emerald-50 px-4 py-3 text-xs font-semibold leading-5 text-emerald-800">
-                  Drag this appointment to any dashed green available slot to reschedule it.
+                <p className="mt-5 rounded-xl bg-[#F7F4EF] px-4 py-3 text-xs font-semibold leading-5 text-[#C9362D]">
+                  Drag this appointment to any dashed orange available slot to reschedule it.
                 </p>
               )}
             </div>

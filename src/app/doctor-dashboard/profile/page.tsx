@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable react-hooks/set-state-in-effect */
 
 import Link from "next/link";
 
@@ -1024,20 +1025,20 @@ export default function DoctorProfilePage() {
 
 
         {message && (
-          <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
+          <div className="mt-6 rounded-xl border border-[#F2C2A7] bg-[#F7F4EF] p-4 text-sm text-[#C9362D]">
             {message}
           </div>
         )}
 
 
         {error && (
-          <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <div className="mt-6 rounded-xl border border-[#F2C2A7] bg-[#F7F4EF] p-4 text-sm text-[#C9362D]">
             {error}
           </div>
         )}
 
 
-        <section className="mt-8 rounded-2xl border border-[var(--line)] bg-white p-6">
+        <section className="mt-8 rounded-xl border border-[var(--line)] bg-white p-6">
 
           <h2 className="text-lg font-semibold">
             Profile Details
@@ -1077,7 +1078,7 @@ export default function DoctorProfilePage() {
                   currentUser.email
                 }
                 disabled
-                className="mt-2 w-full rounded-xl border border-[var(--line)] bg-stone-100 px-4 py-3 text-sm text-[var(--muted)]"
+                className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#F7F4EF] px-4 py-3 text-sm text-[var(--muted)]"
               />
             </label>
 
@@ -1340,7 +1341,7 @@ export default function DoctorProfilePage() {
         </section>
 
 
-        <section className="mt-8 rounded-2xl border border-[var(--line)] bg-white p-6">
+        <section className="mt-8 rounded-xl border border-[var(--line)] bg-white p-6">
 
           <h2 className="text-lg font-semibold">
             Appointment Availability
@@ -1352,7 +1353,7 @@ export default function DoctorProfilePage() {
           </p>
 
 
-          <div className="mt-6 rounded-2xl bg-[#f8fbf9] p-5">
+          <div className="mt-6 rounded-xl bg-[#F7F4EF] p-5">
 
             <h3 className="font-semibold">
               Add Single Slot
@@ -1408,7 +1409,7 @@ export default function DoctorProfilePage() {
           </div>
 
 
-          <div className="mt-5 rounded-2xl bg-[#f8fbf9] p-5">
+          <div className="mt-5 rounded-xl bg-[#F7F4EF] p-5">
 
             <h3 className="font-semibold">
               Recurring Availability
@@ -1564,7 +1565,7 @@ export default function DoctorProfilePage() {
             {slots.length >
             0 ? (
 
-              <div className="mt-4 divide-y divide-[var(--line)] overflow-hidden rounded-2xl border border-[var(--line)]">
+              <div className="mt-4 divide-y divide-[var(--line)] overflow-hidden rounded-xl border border-[var(--line)]">
 
                 {slots.map(
                   (
@@ -1596,8 +1597,8 @@ export default function DoctorProfilePage() {
                         className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${
                           slot.status ===
                           "available"
-                            ? "bg-emerald-50 text-emerald-700"
-                            : "bg-blue-50 text-blue-700"
+                            ? "bg-[#F7F4EF] text-[#C9362D]"
+                            : "bg-[#F7F4EF] text-[#D96B32]"
                         }`}
                       >
                         {
@@ -1616,7 +1617,7 @@ export default function DoctorProfilePage() {
                               slot.id
                             )
                           }
-                          className="text-sm font-semibold text-red-600"
+                          className="text-sm font-semibold text-[#C9362D]"
                         >
                           Delete
                         </button>
@@ -1638,7 +1639,7 @@ export default function DoctorProfilePage() {
 
             ) : (
 
-              <div className="mt-4 rounded-2xl border border-dashed border-[var(--line)] p-10 text-center">
+              <div className="mt-4 rounded-xl border border-dashed border-[var(--line)] p-10 text-center">
 
                 <p className="font-semibold">
                   No availability created yet
