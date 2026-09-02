@@ -50,9 +50,14 @@ export default function Navbar() {
           </Link>
 
           {user?.role === "patient" && (
-            <Link href="/my-appointments" className="hover:text-[var(--brand)]">
-              My appointments
-            </Link>
+            <>
+              <Link href="/my-appointments" className="hover:text-[var(--brand)]">
+                My appointments
+              </Link>
+              <Link href="/profile" className="hover:text-[var(--brand)]">
+                My profile
+              </Link>
+            </>
           )}
 
           {user?.role === "doctor" && (

@@ -4,7 +4,7 @@ import type { Doctor } from "@/types/doctor";
 
 import type { DoctorSlot } from "@/types/availability";
 
-import type { User, UserRole } from "@/types/user";
+import type { PatientProfile, User, UserRole } from "@/types/user";
 
 import type { AppNotification, NotificationType } from "@/types/notification";
 
@@ -31,6 +31,8 @@ const NOTIFICATIONS_KEY = "schedula-notifications";
 const PRESCRIPTIONS_KEY = "schedula-prescriptions";
 
 const REVIEWS_KEY = "schedula-reviews";
+
+const PATIENT_PROFILES_KEY = "schedula-patient-profiles";
 
 export type StoredUser = {
   id: string;
@@ -130,6 +132,38 @@ export function saveRegisteredUser(user: User) {
   }
 
   writeArray(REGISTERED_USERS_KEY, users);
+}
+
+/* =========================================
+   PATIENT PROFILES
+========================================= */
+
+export function getPatientProfile(userId: string): PatientProfile | null {
+  return readArray<PatientProfile>(PATIENT_PROFILES_KEY).find(
+    (profile) => profile.userId === userId,
+  ) ?? null;
+}
+
+export function savePatientProfile(profile: PatientProfile): boolean {
+  const profiles = readArray<PatientProfile>(PATIENT_PROFILES_KEY);
+  const index = profiles.findIndex((item) => item.userId === profile.userId);
+
+  if (index >= 0) {
+    profiles[index] = profile;
+  } else {
+    profiles.push(profile);
+  }
+
+  const saved = writeArray(PATIENT_PROFILES_KEY, profiles);
+
+  if (saved) {
+    const current = getCurrentUser();
+    if (current?.id === profile.userId) {
+      saveCurrentUser({ ...current, name: profile.name });
+    }
+  }
+
+  return saved;
 }
 
 /* =========================================

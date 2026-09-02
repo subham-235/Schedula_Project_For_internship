@@ -11,10 +11,6 @@ import type { Booking, BookingStatus } from "@/types/booking";
 
 import { getLatestBooking } from "@/lib/client-storage";
 
-/* =========================================
-   FILE SIZE
-========================================= */
-
 function formatFileSize(bytes: number) {
   if (bytes < 1024) {
     return `${bytes} B`;
@@ -344,23 +340,53 @@ export default function BookingConfirmationPage() {
            HEADER
         ===================================== */
 
-      pdf.setFillColor(18, 116, 91);
+      pdf.setFillColor(18, 61, 52);
 
-      pdf.rect(0, 0, PAGE_WIDTH, 32, "F");
+      pdf.rect(0, 0, PAGE_WIDTH, 39, "F");
 
-      pdf.setTextColor(255, 255, 255);
+      pdf.setFillColor(185, 239, 207);
 
-      pdf.setFontSize(21);
+      pdf.roundedRect(LEFT, 10, 13, 13, 3, 3, "F");
+
+      pdf.setTextColor(18, 61, 52);
+
+      pdf.setFontSize(12);
 
       pdf.setFont("helvetica", "bold");
 
-      pdf.text("Schedula", LEFT, 15);
+      pdf.text("S", LEFT + 6.5, 18.5, { align: "center" });
 
-      pdf.setFontSize(10);
+      pdf.setTextColor(255, 255, 255);
+
+      pdf.setFontSize(18);
+
+      pdf.setFont("helvetica", "bold");
+
+      pdf.text("Schedula", LEFT + 18, 16);
+
+      pdf.setFontSize(8);
 
       pdf.setFont("helvetica", "normal");
 
-      pdf.text(pageContent.pdfTitle, LEFT, 23);
+      pdf.setTextColor(209, 233, 224);
+
+      pdf.text("Care, clearly scheduled.", LEFT + 18, 22);
+
+      pdf.setFont("helvetica", "bold");
+
+      pdf.setFontSize(9);
+
+      pdf.setTextColor(255, 255, 255);
+
+      pdf.text(pageContent.pdfTitle.toUpperCase(), RIGHT, 16, { align: "right" });
+
+      pdf.setFont("helvetica", "normal");
+
+      pdf.setFontSize(7.5);
+
+      pdf.setTextColor(209, 233, 224);
+
+      pdf.text(`Issued ${displayDateTime(new Date().toISOString())}`, RIGHT, 22, { align: "right" });
 
       /* =====================================
            TITLE
@@ -372,7 +398,7 @@ export default function BookingConfirmationPage() {
 
       pdf.setFont("helvetica", "bold");
 
-      pdf.text(pageContent.pdfTitle, LEFT, 48);
+      pdf.text(pageContent.pdfTitle, LEFT, 52);
 
       pdf.setFontSize(10);
 
@@ -382,19 +408,46 @@ export default function BookingConfirmationPage() {
 
       const subtitleLines = pdf.splitTextToSize(pageContent.pdfSubtitle, 120);
 
-      pdf.text(subtitleLines, LEFT, 55);
+      pdf.text(subtitleLines, LEFT, 59);
+
+      const statusColors =
+        booking.status === "confirmed"
+          ? [23, 107, 85]
+          : booking.status === "pending"
+            ? [190, 125, 25]
+            : booking.status === "cancelled"
+              ? [190, 60, 70]
+              : [65, 105, 150];
+
+      pdf.setFillColor(statusColors[0], statusColors[1], statusColors[2]);
+
+      pdf.roundedRect(LEFT, 70, 37, 9, 4.5, 4.5, "F");
+
+      pdf.setFont("helvetica", "bold");
+
+      pdf.setFontSize(7.5);
+
+      pdf.setTextColor(255, 255, 255);
+
+      pdf.text(statusLabel.toUpperCase(), LEFT + 18.5, 75.8, { align: "center" });
 
       /* =====================================
            QR CODE
         ===================================== */
 
-      pdf.addImage(qrImage, "PNG", 151, 39, 42, 42);
+      pdf.setFillColor(248, 251, 249);
+
+      pdf.setDrawColor(220, 231, 226);
+
+      pdf.roundedRect(150, 44, 44, 51, 3, 3, "FD");
+
+      pdf.addImage(qrImage, "PNG", 153, 47, 38, 38);
 
       pdf.setFontSize(7);
 
       pdf.setTextColor(90, 105, 100);
 
-      pdf.text("Scan for appointment details", 154, 85);
+      pdf.text("Scan to verify details", 172, 90, { align: "center" });
 
       /* =====================================
            DIVIDER
@@ -402,24 +455,44 @@ export default function BookingConfirmationPage() {
 
       pdf.setDrawColor(220, 228, 224);
 
-      pdf.line(LEFT, 92, RIGHT, 92);
+      pdf.line(LEFT, 100, RIGHT, 100);
 
-      let y = 104;
+      let y = 111;
 
       /* =====================================
            PDF HELPERS
         ===================================== */
 
       const checkPage = (requiredSpace = 25) => {
-        if (y + requiredSpace > 280) {
+        if (y + requiredSpace > 274) {
           pdf.addPage();
 
-          y = 20;
+          pdf.setFillColor(18, 61, 52);
+
+          pdf.rect(0, 0, PAGE_WIDTH, 22, "F");
+
+          pdf.setTextColor(255, 255, 255);
+
+          pdf.setFont("helvetica", "bold");
+
+          pdf.setFontSize(11);
+
+          pdf.text("Schedula", LEFT, 14);
+
+          pdf.setFontSize(8);
+
+          pdf.text(`${pageContent.pdfTitle} - continued`, RIGHT, 14, { align: "right" });
+
+          y = 33;
         }
       };
 
       const addSectionTitle = (title: string) => {
         checkPage(15);
+
+        pdf.setFillColor(23, 107, 85);
+
+        pdf.roundedRect(LEFT, y - 5.5, 3, 8, 1.5, 1.5, "F");
 
         pdf.setFont("helvetica", "bold");
 
@@ -427,21 +500,31 @@ export default function BookingConfirmationPage() {
 
         pdf.setTextColor(18, 116, 91);
 
-        pdf.text(title, LEFT, y);
+        pdf.text(title, LEFT + 7, y);
 
         y += 8;
       };
 
       const addField = (label: string, value: string) => {
-        checkPage(18);
+        const lines = pdf.splitTextToSize(value || "-", 112);
 
-        pdf.setFont("helvetica", "normal");
+        const rowHeight = Math.max(12, lines.length * 4.2 + 6);
+
+        checkPage(rowHeight + 3);
+
+        pdf.setFillColor(247, 250, 248);
+
+        pdf.setDrawColor(225, 234, 230);
+
+        pdf.roundedRect(LEFT, y - 5, RIGHT - LEFT, rowHeight, 2.5, 2.5, "FD");
+
+        pdf.setFont("helvetica", "bold");
 
         pdf.setFontSize(8);
 
         pdf.setTextColor(110, 120, 116);
 
-        pdf.text(label, LEFT, y);
+        pdf.text(label.toUpperCase(), LEFT + 5, y + 1.5);
 
         pdf.setFont("helvetica", "bold");
 
@@ -449,11 +532,9 @@ export default function BookingConfirmationPage() {
 
         pdf.setTextColor(30, 45, 40);
 
-        const lines = pdf.splitTextToSize(value, 165);
+        pdf.text(lines, LEFT + 58, y + 1.5);
 
-        pdf.text(lines, LEFT, y + 5);
-
-        y += 11 + Math.max(0, lines.length - 1) * 4;
+        y += rowHeight + 3;
       };
 
       /* =====================================
