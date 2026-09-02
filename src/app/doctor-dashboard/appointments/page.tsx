@@ -13,6 +13,26 @@ import {
   useRouter,
 } from "next/navigation";
 
+import {
+  CalendarDays,
+  CheckCircle2,
+  ChevronRight,
+  CircleUserRound,
+  Clock3,
+  FileText,
+  LayoutDashboard,
+  ListChecks,
+  Mail,
+  MapPin,
+  Paperclip,
+  Pill,
+  Phone,
+  Search,
+  Stethoscope,
+  UserRound,
+  UsersRound,
+} from "lucide-react";
+
 import type {
   Booking,
   BookingStatus,
@@ -1481,13 +1501,71 @@ export default function AllAppointmentsPage() {
 
 
   return (
-    <main className="min-h-screen bg-[#f7faf8] px-4 py-8 sm:px-8">
+    <main className="min-h-screen bg-[#f3f7f5] text-[#17352d] lg:pl-[17.5rem]">
 
-      <div className="mx-auto max-w-7xl">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[17.5rem] flex-col bg-[#123d34] px-4 text-white lg:flex">
+        <Link
+          href="/"
+          className="flex h-20 items-center gap-3 border-b border-white/10 px-2"
+        >
+          <div className="grid size-10 place-items-center rounded-xl bg-[#b9efcf] text-[#123d34]">
+            <Stethoscope size={21} />
+          </div>
+
+          <div>
+            <p className="text-lg font-bold tracking-tight">Schedula</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-100/55">
+              Doctor workspace
+            </p>
+          </div>
+        </Link>
+
+        <nav className="mt-7 space-y-1.5" aria-label="Doctor workspace navigation">
+          <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-100/40">
+            Workspace
+          </p>
+
+          <Link href="/doctor-dashboard" className="flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium text-emerald-50/70 hover:bg-white/10 hover:text-white">
+            <LayoutDashboard size={18} /> Overview
+          </Link>
+
+          <Link href="/doctor-dashboard/appointments" className="flex items-center gap-3 rounded-xl bg-white px-3.5 py-3 text-sm font-semibold text-[#123d34] shadow-sm">
+            <ListChecks size={18} /> Appointments
+          </Link>
+
+          <Link href="/doctor-dashboard/calendar" className="flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium text-emerald-50/70 hover:bg-white/10 hover:text-white">
+            <CalendarDays size={18} /> Calendar
+          </Link>
+
+          <Link href="/doctor-dashboard/prescriptions" className="flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium text-emerald-50/70 hover:bg-white/10 hover:text-white">
+            <Pill size={18} /> Prescriptions
+          </Link>
+
+          <Link href="/doctor-dashboard/profile" className="flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium text-emerald-50/70 hover:bg-white/10 hover:text-white">
+            <CircleUserRound size={18} /> Profile
+          </Link>
+        </nav>
+
+        {profile && (
+          <div className="mt-auto mb-4 rounded-2xl border border-white/10 bg-white/7 p-4">
+            <div className="flex items-center gap-3">
+              <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#b9efcf] text-sm font-bold text-[#123d34]">
+                {profile.initials}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold">{profile.name}</p>
+                <p className="truncate text-xs text-emerald-100/55">{profile.specialty}</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </aside>
+
+      <div className="mx-auto max-w-[94rem] px-4 py-5 sm:px-7 sm:py-7 xl:px-10">
 
         <Link
           href="/doctor-dashboard"
-          className="text-sm font-semibold text-[var(--brand)] hover:underline"
+          className="inline-flex rounded-xl border border-[#dce7e2] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--brand)] shadow-sm hover:border-[var(--brand)] lg:hidden"
         >
           ← Back to dashboard
         </Link>
@@ -1495,21 +1573,74 @@ export default function AllAppointmentsPage() {
 
         {/* HEADER */}
 
-        <div className="mt-6">
+        <div className="relative mt-5 overflow-hidden rounded-3xl bg-[#176b55] p-6 text-white shadow-[0_18px_50px_rgba(19,82,65,0.16)] sm:p-8 lg:mt-0">
 
-          <p className="text-sm font-semibold text-[var(--brand)]">
-            Doctor Portal
+          <div className="absolute -right-20 -top-28 size-72 rounded-full border-[44px] border-white/6" />
+
+          <p className="relative text-xs font-semibold uppercase tracking-[0.18em] text-emerald-100/75">
+            Clinical work queue
           </p>
 
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-            Appointment Management
+          <h1 className="relative mt-2 text-3xl font-bold tracking-tight">
+            Appointments
           </h1>
 
-          <p className="mt-2 text-sm text-[var(--muted)]">
-            Confirm, reschedule, cancel and manage patient appointments.
+          <p className="relative mt-2 max-w-2xl text-sm leading-6 text-emerald-50/75">
+            Review patient requests, prepare for upcoming consultations, and complete follow-up care from one focused workspace.
           </p>
 
         </div>
+
+
+        <section className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Appointment summary">
+          <article className="rounded-2xl border border-[#dce7e2] bg-white p-4 shadow-[0_8px_24px_rgba(27,68,56,0.04)]">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-[#72847d]">All appointments</p>
+                <p className="mt-1 text-2xl font-bold">{counts.all}</p>
+              </div>
+              <div className="grid size-10 place-items-center rounded-xl bg-[#edf6f2] text-[#176b55]">
+                <UsersRound size={18} />
+              </div>
+            </div>
+          </article>
+
+          <article className="rounded-2xl border border-amber-200 bg-white p-4 shadow-[0_8px_24px_rgba(27,68,56,0.04)]">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-[#a56c16]">Awaiting review</p>
+                <p className="mt-1 text-2xl font-bold">{counts.pending}</p>
+              </div>
+              <div className="grid size-10 place-items-center rounded-xl bg-amber-50 text-amber-700">
+                <Clock3 size={18} />
+              </div>
+            </div>
+          </article>
+
+          <article className="rounded-2xl border border-emerald-200 bg-white p-4 shadow-[0_8px_24px_rgba(27,68,56,0.04)]">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-emerald-700">Confirmed</p>
+                <p className="mt-1 text-2xl font-bold">{counts.confirmed}</p>
+              </div>
+              <div className="grid size-10 place-items-center rounded-xl bg-emerald-50 text-emerald-700">
+                <CheckCircle2 size={18} />
+              </div>
+            </div>
+          </article>
+
+          <article className="rounded-2xl border border-blue-200 bg-white p-4 shadow-[0_8px_24px_rgba(27,68,56,0.04)]">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-blue-700">Completed</p>
+                <p className="mt-1 text-2xl font-bold">{counts.completed}</p>
+              </div>
+              <div className="grid size-10 place-items-center rounded-xl bg-blue-50 text-blue-700">
+                <FileText size={18} />
+              </div>
+            </div>
+          </article>
+        </section>
 
 
         {/* SUCCESS */}
@@ -1536,7 +1667,12 @@ export default function AllAppointmentsPage() {
 
         {/* FILTERS */}
 
-        <section className="mt-7 rounded-2xl border border-[var(--line)] bg-white p-4">
+        <section className="mt-5 rounded-2xl border border-[#dce7e2] bg-white p-4 shadow-[0_8px_24px_rgba(27,68,56,0.04)]">
+
+          <div className="mb-4 flex items-center gap-2 text-sm font-bold">
+            <Search size={16} className="text-[var(--brand)]" />
+            Find an appointment
+          </div>
 
           <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
 
@@ -1555,7 +1691,7 @@ export default function AllAppointmentsPage() {
 
               placeholder="Search patient, email or reason..."
 
-              className="rounded-xl border border-[var(--line)] px-4 py-3 text-sm outline-none transition focus:border-[var(--brand)]"
+              className="rounded-xl border border-[var(--line)] bg-[#f8faf9] px-4 py-3 text-sm outline-none transition focus:border-[var(--brand)] focus:bg-white"
             />
 
 
@@ -1574,7 +1710,7 @@ export default function AllAppointmentsPage() {
                 )
               }
 
-              className="rounded-xl border border-[var(--line)] px-4 py-3 text-sm outline-none transition focus:border-[var(--brand)]"
+              className="rounded-xl border border-[var(--line)] bg-[#f8faf9] px-4 py-3 text-sm outline-none transition focus:border-[var(--brand)] focus:bg-white"
             />
 
           </div>
@@ -1604,7 +1740,7 @@ export default function AllAppointmentsPage() {
                     filter ===
                     item
                       ? "bg-[var(--brand)] text-white"
-                      : "bg-stone-100 hover:bg-stone-200"
+                      : "border border-[#dce7e2] bg-[#f8faf9] text-[#657970] hover:bg-white"
                   }`}
                 >
 
@@ -1648,22 +1784,29 @@ export default function AllAppointmentsPage() {
 
         {/* MAIN */}
 
-        <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_25rem]">
+        <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_26rem]">
 
           {/* APPOINTMENT LIST */}
 
-          <section className="overflow-hidden rounded-2xl border border-[var(--line)] bg-white">
+          <section className="overflow-hidden rounded-2xl border border-[#dce7e2] bg-white shadow-[0_8px_24px_rgba(27,68,56,0.04)]">
 
-            <div className="border-b border-[var(--line)] px-5 py-4">
+            <div className="flex items-center justify-between gap-4 border-b border-[var(--line)] px-5 py-4">
 
-              <p className="font-semibold">
-                Appointments
-              </p>
+              <div>
 
-              <p className="mt-1 text-xs text-[var(--muted)]">
-                {visible.length} appointment
-                {visible.length === 1 ? "" : "s"} found
-              </p>
+                <p className="font-bold">
+                  Patient queue
+                </p>
+
+                <p className="mt-1 text-xs text-[var(--muted)]">
+                  Select a patient to review and take action
+                </p>
+
+              </div>
+
+              <span className="rounded-full bg-[#edf6f2] px-3 py-1 text-xs font-bold text-[var(--brand)]">
+                {visible.length} result{visible.length === 1 ? "" : "s"}
+              </span>
 
             </div>
 
@@ -1707,8 +1850,8 @@ export default function AllAppointmentsPage() {
                       className={`w-full p-5 text-left transition ${
                         selectedId ===
                         booking.id
-                          ? "bg-emerald-50/60"
-                          : "hover:bg-stone-50"
+                          ? "bg-[#edf7f2] shadow-[inset_3px_0_0_#176b55]"
+                          : "hover:bg-[#f8faf9]"
                       }`}
                     >
 
@@ -1716,7 +1859,7 @@ export default function AllAppointmentsPage() {
 
                         <div className="flex items-start gap-4">
 
-                          <div className="grid size-12 shrink-0 place-items-center rounded-full bg-emerald-100 text-sm font-semibold text-[var(--brand)]">
+                          <div className="grid size-12 shrink-0 place-items-center rounded-xl bg-emerald-100 text-sm font-bold text-[var(--brand)]">
 
                             {getInitials(
                               booking.patientName
@@ -1741,26 +1884,26 @@ export default function AllAppointmentsPage() {
                             </p>
 
 
-                            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-[var(--muted)]">
+                            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs font-medium text-[var(--muted)]">
 
-                              <span>
-                                📅{" "}
+                              <span className="inline-flex items-center gap-1.5">
+                                <CalendarDays size={13} />
                                 {formatDate(
                                   booking.startsAt
                                 )}
                               </span>
 
 
-                              <span>
-                                🕐{" "}
+                              <span className="inline-flex items-center gap-1.5">
+                                <Clock3 size={13} />
                                 {formatTime(
                                   booking.startsAt
                                 )}
                               </span>
 
 
-                              <span>
-                                🩺{" "}
+                              <span className="inline-flex items-center gap-1.5">
+                                <Stethoscope size={13} />
                                 {
                                   booking.appointmentType ??
                                   "In-person"
@@ -1772,8 +1915,8 @@ export default function AllAppointmentsPage() {
 
                             {booking.attachment && (
 
-                              <p className="mt-2 text-xs font-semibold text-[var(--brand)]">
-                                📎 Medical document attached
+                              <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--brand)]">
+                                <Paperclip size={13} /> Medical document attached
                               </p>
 
                             )}
@@ -1783,15 +1926,21 @@ export default function AllAppointmentsPage() {
                         </div>
 
 
-                        <span
-                          className={`w-fit shrink-0 rounded-full border px-3 py-1 text-xs font-semibold capitalize ${getStatusClasses(
-                            booking.status
-                          )}`}
-                        >
-                          {
-                            booking.status
-                          }
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`w-fit shrink-0 rounded-full border px-3 py-1 text-xs font-semibold capitalize ${getStatusClasses(
+                              booking.status
+                            )}`}
+                          >
+                            {
+                              booking.status
+                            }
+                          </span>
+
+                          <span className="grid size-8 place-items-center rounded-lg border border-[#dce7e2] text-[#71837c]">
+                            <ChevronRight size={15} />
+                          </span>
+                        </div>
 
                       </div>
 
@@ -1806,8 +1955,8 @@ export default function AllAppointmentsPage() {
 
               <div className="p-14 text-center">
 
-                <div className="mx-auto grid size-12 place-items-center rounded-full bg-stone-100 text-xl">
-                  📅
+                <div className="mx-auto grid size-12 place-items-center rounded-2xl bg-stone-100 text-stone-500">
+                  <UserRound size={20} />
                 </div>
 
                 <p className="mt-4 font-semibold">
@@ -1827,10 +1976,10 @@ export default function AllAppointmentsPage() {
 
           {/* DETAILS */}
 
-          <aside className="h-fit rounded-2xl border border-[var(--line)] bg-white p-5 xl:sticky xl:top-24">
+          <aside className="h-fit rounded-2xl border border-[#dce7e2] bg-white p-5 shadow-[0_8px_24px_rgba(27,68,56,0.04)] xl:sticky xl:top-6">
 
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--brand)]">
-              Appointment Details
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--brand)]">
+              <FileText size={14} /> Appointment details
             </p>
 
 
@@ -1842,7 +1991,7 @@ export default function AllAppointmentsPage() {
 
                 <div className="flex items-center gap-3">
 
-                  <div className="grid size-12 place-items-center rounded-full bg-emerald-100 text-sm font-semibold text-[var(--brand)]">
+                  <div className="grid size-12 place-items-center rounded-xl bg-emerald-100 text-sm font-bold text-[var(--brand)]">
 
                     {getInitials(
                       selected.patientName
@@ -1886,7 +2035,7 @@ export default function AllAppointmentsPage() {
 
                 {/* DETAILS */}
 
-                <dl className="mt-6 space-y-4 text-sm">
+                <dl className="mt-6 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-1 [&>div]:rounded-xl [&>div]:bg-[#f5f8f7] [&>div]:p-3.5">
 
                   <div>
 
@@ -1944,8 +2093,8 @@ export default function AllAppointmentsPage() {
 
                   <div>
 
-                    <dt className="text-[var(--muted)]">
-                      Email
+                    <dt className="flex items-center gap-2 text-[var(--muted)]">
+                      <Mail size={14} /> Email
                     </dt>
 
                     <dd className="mt-1 break-all font-semibold">
@@ -1959,8 +2108,8 @@ export default function AllAppointmentsPage() {
 
                   <div>
 
-                    <dt className="text-[var(--muted)]">
-                      Phone
+                    <dt className="flex items-center gap-2 text-[var(--muted)]">
+                      <Phone size={14} /> Phone
                     </dt>
 
                     <dd className="mt-1 font-semibold">
@@ -1974,8 +2123,8 @@ export default function AllAppointmentsPage() {
 
                   <div>
 
-                    <dt className="text-[var(--muted)]">
-                      Location
+                    <dt className="flex items-center gap-2 text-[var(--muted)]">
+                      <MapPin size={14} /> Location
                     </dt>
 
                     <dd className="mt-1 font-semibold">

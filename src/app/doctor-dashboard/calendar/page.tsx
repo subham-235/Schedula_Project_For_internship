@@ -18,6 +18,12 @@ import {
   ArrowRight,
   CalendarDays,
   Clock3,
+  Mail,
+  MapPin,
+  Phone,
+  Stethoscope,
+  UserRound,
+  X,
 } from "lucide-react";
 
 import type {
@@ -47,6 +53,29 @@ import {
 } from "@/lib/mock-data/doctors";
 
 import StatusBadge from "@/components/appointments/StatusBadge";
+
+
+const calendarStatusStyles = {
+  pending:
+    "border-amber-200 bg-amber-50 text-amber-800",
+  confirmed:
+    "border-emerald-200 bg-emerald-50 text-emerald-800",
+  completed:
+    "border-blue-200 bg-blue-50 text-blue-800",
+  cancelled:
+    "border-rose-200 bg-rose-50 text-rose-700",
+  missed:
+    "border-stone-200 bg-stone-100 text-stone-600",
+} as const;
+
+
+const calendarStatusDots = {
+  pending: "bg-amber-400",
+  confirmed: "bg-emerald-500",
+  completed: "bg-blue-500",
+  cancelled: "bg-rose-500",
+  missed: "bg-stone-400",
+} as const;
 
 
 type CalendarView =
@@ -283,6 +312,14 @@ export default function DoctorCalendarPage() {
   ] =
     useState("");
 
+  const [
+    selectedBooking,
+    setSelectedBooking,
+  ] =
+    useState<Booking | null>(
+      null
+    );
+
 
   const load =
     useCallback(() => {
@@ -463,9 +500,27 @@ export default function DoctorCalendarPage() {
           key={
             booking.id
           }
+          role="button"
+          tabIndex={0}
           draggable={
             draggable
           }
+          onClick={() =>
+            setSelectedBooking(
+              booking
+            )
+          }
+          onKeyDown={(event) => {
+            if (
+              event.key === "Enter" ||
+              event.key === " "
+            ) {
+              event.preventDefault();
+              setSelectedBooking(
+                booking
+              );
+            }
+          }}
           onDragStart={() =>
             draggable &&
             setDraggingBookingId(
@@ -477,10 +532,14 @@ export default function DoctorCalendarPage() {
               null
             )
           }
-          className={`rounded-xl border p-3 ${
+          className={`rounded-xl border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-sm ${
+            calendarStatusStyles[
+              booking.status
+            ]
+          } ${
             draggable
-              ? "cursor-grab border-emerald-200 bg-emerald-50/70 active:cursor-grabbing"
-              : "border-stone-200 bg-stone-100"
+              ? "cursor-grab active:cursor-grabbing"
+              : "cursor-pointer"
           }`}
         >
           <div className="flex items-start justify-between gap-2">
@@ -668,11 +727,11 @@ export default function DoctorCalendarPage() {
 
 
   return (
-    <main className="min-h-screen bg-[#f7faf8] px-4 py-8 sm:px-8">
+    <main className="min-h-screen bg-[#f3f7f5] px-4 py-6 sm:px-8 lg:px-10">
 
-      <div className="mx-auto max-w-7xl">
+      <div className="mx-auto max-w-[94rem]">
 
-        <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
+        <div className="flex flex-col justify-between gap-5 rounded-3xl border border-[#dce7e2] bg-white p-6 shadow-[0_8px_24px_rgba(27,68,56,0.04)] lg:flex-row lg:items-end lg:p-7">
 
           <div>
 
@@ -687,7 +746,7 @@ export default function DoctorCalendarPage() {
               Calendar
             </p>
 
-            <h1 className="mt-2 text-3xl font-semibold">
+            <h1 className="mt-2 text-3xl font-bold tracking-tight">
               Appointment Calendar
             </h1>
 
@@ -723,8 +782,8 @@ export default function DoctorCalendarPage() {
                   className={`rounded-xl px-4 py-2.5 text-sm font-semibold capitalize ${
                     view ===
                     item
-                      ? "bg-[var(--brand)] text-white"
-                      : "border border-[var(--line)] bg-white"
+                      ? "bg-[var(--brand)] text-white shadow-sm"
+                      : "border border-[var(--line)] bg-[#f8faf9] text-[#657970] hover:bg-white"
                   }`}
                 >
                   {
@@ -748,7 +807,40 @@ export default function DoctorCalendarPage() {
         )}
 
 
-        <div className="mt-6 flex items-center justify-between rounded-2xl border border-[var(--line)] bg-white p-4">
+        <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-2xl border border-[#dce7e2] bg-white px-4 py-3 text-xs font-semibold text-[#657970]">
+          <span className="mr-1 text-[10px] uppercase tracking-[0.14em] text-[#8b9a94]">
+            Status
+          </span>
+
+          {(
+            [
+              "confirmed",
+              "pending",
+              "completed",
+              "cancelled",
+              "missed",
+            ] as const
+          ).map((status) => (
+            <span
+              key={status}
+              className="flex items-center gap-1.5 capitalize"
+            >
+              <span
+                className={`size-2 rounded-full ${
+                  calendarStatusDots[status]
+                }`}
+              />
+              {status}
+            </span>
+          ))}
+
+          <span className="ml-auto hidden text-[10px] text-[#8b9a94] sm:block">
+            Confirmed future bookings can be dragged
+          </span>
+        </div>
+
+
+        <div className="mt-5 flex items-center justify-between rounded-2xl border border-[var(--line)] bg-white p-4 shadow-[0_8px_24px_rgba(27,68,56,0.04)]">
 
           <button
             type="button"
@@ -889,7 +981,7 @@ export default function DoctorCalendarPage() {
 
         {view ===
           "week" && (
-          <div className="mt-6 grid gap-3 xl:grid-cols-7">
+          <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-7">
 
             {weekDays.map(
               (
@@ -919,7 +1011,7 @@ export default function DoctorCalendarPage() {
                     key={
                       key
                     }
-                    className="min-h-[320px] rounded-2xl border border-[var(--line)] bg-white p-3"
+                    className="min-h-[320px] rounded-2xl border border-[var(--line)] bg-white p-3 shadow-[0_6px_20px_rgba(27,68,56,0.035)]"
                   >
 
                     <button
@@ -987,7 +1079,7 @@ export default function DoctorCalendarPage() {
 
         {view ===
           "month" && (
-          <div className="mt-6 grid grid-cols-7 overflow-hidden rounded-2xl border border-[var(--line)] bg-white">
+          <div className="mt-6 grid min-w-[760px] grid-cols-7 overflow-hidden rounded-2xl border border-[var(--line)] bg-white shadow-[0_8px_24px_rgba(27,68,56,0.04)]">
 
             {[
               "Mon",
@@ -1024,73 +1116,135 @@ export default function DoctorCalendarPage() {
                     date
                   );
 
-                const appointmentCount =
+                const appointmentsForDay =
                   bookings.filter(
                     (booking) =>
                       booking.date ===
                       key
-                  ).length;
+                  );
 
-                const availableCount =
+                const availableSlots =
                   slots.filter(
                     (slot) =>
                       slot.date ===
                         key &&
                       slot.status ===
                         "available"
-                  ).length;
+                  );
 
                 const belongsToMonth =
                   date.getMonth() ===
                   cursor.getMonth();
 
                 return (
-                  <button
+                  <div
                     key={
                       key
                     }
-                    type="button"
-                    onClick={() => {
-                      setCursor(
-                        date
-                      );
-
-                      setView(
-                        "day"
-                      );
+                    onDragOver={(event) => {
+                      if (
+                        draggingBookingId &&
+                        availableSlots[0]
+                      ) {
+                        event.preventDefault();
+                      }
+                    }}
+                    onDrop={() => {
+                      if (
+                        availableSlots[0]
+                      ) {
+                        dropOnSlot(
+                          availableSlots[0]
+                        );
+                      }
                     }}
                     className={`min-h-28 border-b border-r border-[var(--line)] p-2 text-left transition hover:bg-emerald-50/40 ${
                       belongsToMonth
                         ? "bg-white"
                         : "bg-stone-50 text-stone-400"
+                    } ${
+                      draggingBookingId &&
+                      availableSlots[0]
+                        ? "bg-emerald-50/70"
+                        : ""
                     }`}
                   >
 
-                    <span className="text-xs font-semibold">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCursor(
+                          date
+                        );
+
+                        setView(
+                          "day"
+                        );
+                      }}
+                      className="grid size-7 place-items-center rounded-full text-xs font-semibold hover:bg-emerald-100"
+                    >
                       {
                         date.getDate()
                       }
-                    </span>
+                    </button>
 
-                    {appointmentCount >
+                    {appointmentsForDay.length >
                       0 && (
-                      <p className="mt-3 rounded-lg bg-blue-50 px-2 py-1 text-[10px] font-semibold text-blue-700">
-                        {appointmentCount} appointment
-                        {appointmentCount !==
-                        1
-                          ? "s"
-                          : ""}
-                      </p>
+                      <span className="mt-3 block space-y-1">
+                        {appointmentsForDay
+                          .slice(
+                            0,
+                            3
+                          )
+                          .map(
+                            (
+                              booking
+                            ) => (
+                              <button
+                                type="button"
+                                key={booking.id}
+                                onClick={() =>
+                                  setSelectedBooking(
+                                    booking
+                                  )
+                                }
+                                className={`flex items-center gap-1.5 truncate rounded-md border px-2 py-1 text-[9px] font-semibold ${
+                                  calendarStatusStyles[
+                                    booking.status
+                                  ]
+                                }`}
+                              >
+                                <span
+                                  className={`size-1.5 shrink-0 rounded-full ${
+                                    calendarStatusDots[
+                                      booking.status
+                                    ]
+                                  }`}
+                                />
+                                {booking.patientName}
+                              </button>
+                            )
+                          )}
+
+                        {appointmentsForDay.length >
+                          3 && (
+                          <span className="block px-1 text-[9px] font-semibold text-[var(--brand)]">
+                            +{appointmentsForDay.length - 3} more
+                          </span>
+                        )}
+                      </span>
                     )}
 
-                    {availableCount >
+                    {availableSlots.length >
                       0 && (
                       <p className="mt-1 rounded-lg bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-700">
-                        {availableCount} available
+                        {draggingBookingId
+                          ? `Drop at ${availableSlots[0].time}`
+                          : `${availableSlots.length} available`}
                       </p>
                     )}
 
-                  </button>
+                  </div>
                 );
               }
             )}
@@ -1099,6 +1253,198 @@ export default function DoctorCalendarPage() {
         )}
 
       </div>
+
+
+      {selectedBooking && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-[#0b231e]/55 p-4 backdrop-blur-sm"
+          onMouseDown={(event) => {
+            if (
+              event.target ===
+              event.currentTarget
+            ) {
+              setSelectedBooking(
+                null
+              );
+            }
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="calendar-appointment-title"
+            className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-white shadow-2xl"
+          >
+            <div
+              className={`border-b p-5 ${
+                calendarStatusStyles[
+                  selectedBooking.status
+                ]
+              }`}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="grid size-11 place-items-center rounded-xl bg-white/75">
+                    <UserRound
+                      size={20}
+                    />
+                  </div>
+
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.16em] opacity-65">
+                      Appointment details
+                    </p>
+
+                    <h2
+                      id="calendar-appointment-title"
+                      className="mt-1 text-lg font-bold"
+                    >
+                      {
+                        selectedBooking.patientName
+                      }
+                    </h2>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  aria-label="Close appointment details"
+                  onClick={() =>
+                    setSelectedBooking(
+                      null
+                    )
+                  }
+                  className="grid size-9 place-items-center rounded-xl bg-white/60 hover:bg-white"
+                >
+                  <X
+                    size={18}
+                  />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-5 sm:p-6">
+              <span
+                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-bold capitalize ${
+                  calendarStatusStyles[
+                    selectedBooking.status
+                  ]
+                }`}
+              >
+                <span
+                  className={`size-2 rounded-full ${
+                    calendarStatusDots[
+                      selectedBooking.status
+                    ]
+                  }`}
+                />
+                {
+                  selectedBooking.status
+                }
+              </span>
+
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl bg-[#f5f8f7] p-4">
+                  <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#7d8d87]">
+                    <CalendarDays
+                      size={14}
+                    />
+                    Date & time
+                  </p>
+                  <p className="mt-2 text-sm font-bold">
+                    {
+                      formatHeader(
+                        new Date(
+                          selectedBooking.startsAt
+                        )
+                      )
+                    }
+                  </p>
+                  <p className="mt-1 text-xs text-[#647a72]">
+                    {
+                      selectedBooking.time
+                    }
+                  </p>
+                </div>
+
+                <div className="rounded-xl bg-[#f5f8f7] p-4">
+                  <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#7d8d87]">
+                    <Stethoscope
+                      size={14}
+                    />
+                    Visit type
+                  </p>
+                  <p className="mt-2 text-sm font-bold">
+                    {
+                      selectedBooking.appointmentType ??
+                      "In-person"
+                    }
+                  </p>
+                  <p className="mt-1 text-xs text-[#647a72]">
+                    Age {
+                      selectedBooking.patientAge
+                    }
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-xl border border-[#e1eae6] p-4">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#7d8d87]">
+                  Reason for visit
+                </p>
+                <p className="mt-2 text-sm leading-6">
+                  {
+                    selectedBooking.reason
+                  }
+                </p>
+              </div>
+
+              <dl className="mt-5 space-y-4 text-sm">
+                <div className="flex items-center gap-3">
+                  <Mail
+                    size={16}
+                    className="text-[var(--brand)]"
+                  />
+                  <div>
+                    <dt className="text-[10px] text-[var(--muted)]">Email</dt>
+                    <dd className="break-all font-semibold">{selectedBooking.patientEmail}</dd>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <Phone
+                    size={16}
+                    className="text-[var(--brand)]"
+                  />
+                  <div>
+                    <dt className="text-[10px] text-[var(--muted)]">Phone</dt>
+                    <dd className="font-semibold">{selectedBooking.patientPhone}</dd>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <MapPin
+                    size={16}
+                    className="text-[var(--brand)]"
+                  />
+                  <div>
+                    <dt className="text-[10px] text-[var(--muted)]">Location</dt>
+                    <dd className="font-semibold">{selectedBooking.doctorLocation ?? "Clinic"}</dd>
+                  </div>
+                </div>
+              </dl>
+
+              {isDraggable(
+                selectedBooking
+              ) && (
+                <p className="mt-5 rounded-xl bg-emerald-50 px-4 py-3 text-xs font-semibold leading-5 text-emerald-800">
+                  Drag this appointment to any dashed green available slot to reschedule it.
+                </p>
+              )}
+            </div>
+          </section>
+        </div>
+      )}
 
     </main>
   );
